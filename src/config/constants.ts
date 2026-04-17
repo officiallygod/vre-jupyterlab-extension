@@ -12,6 +12,7 @@ export const LANGUAGE = {
 /** BEM-style class and metadata constants for execution guard visuals/state. */
 export const EXECUTION = {
   metadataKey: 'vre.executed',
+  stateMetadataKey: 'vre.executionState',
   executedCellClass: 'vre-jupyterlab-extension__cell--executed',
   executedInputClass: 'vre-jupyterlab-extension__input-editor--executed',
   executedEditorClass: 'vre-jupyterlab-extension__cm-editor--executed'

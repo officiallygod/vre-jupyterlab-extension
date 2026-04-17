@@ -2,6 +2,12 @@ import { showDialog, Dialog } from '@jupyterlab/apputils';
 import { Cell } from '@jupyterlab/cells';
 import { NotebookActions, NotebookPanel } from '@jupyterlab/notebook';
 import { EXECUTION } from '../config/constants';
+import {
+	buildExecutionState,
+	ExecutionStatus,
+	hasSuccessfulExecutionSnapshot,
+	isAlreadyExecutedSnapshot,
+} from './freeze-state';
 
 let hooksConnected = false;
 const watchedModels = new WeakSet<any>();
@@ -11,44 +17,30 @@ function getExecutionCount(cell: Cell): number | null {
 	return typeof count === 'number' && Number.isFinite(count) ? count : null;
 }
 
-function hasErrorOutput(cell: Cell): boolean {
+function getOutputItems(cell: Cell): unknown[] {
 	const outputs = (cell.model as any).outputs;
 	if (!outputs) {
-		return false;
+		return [];
 	}
 	const length = typeof outputs.length === 'number' ? outputs.length : 0;
+	const items: unknown[] = [];
 	for (let i = 0; i < length; i += 1) {
-		const item = typeof outputs.get === 'function' ? outputs.get(i) : outputs[i];
-		const outputType = item?.output_type ?? item?.type;
-		if (outputType === 'error') {
-			return true;
-		}
+		items.push(typeof outputs.get === 'function' ? outputs.get(i) : outputs[i]);
 	}
-	return false;
-}
-
-function hasAnyOutput(cell: Cell): boolean {
-	const outputs = (cell.model as any).outputs;
-	if (!outputs) {
-		return false;
-	}
-	const length = typeof outputs.length === 'number' ? outputs.length : 0;
-	return length > 0;
+	return items;
 }
 
 function hasSuccessfulExecution(cell: Cell): boolean {
-	const count = getExecutionCount(cell);
-	if (hasErrorOutput(cell)) {
-		return false;
-	}
-	// Some custom kernels may not reliably set executionCount.
-	// Treat any non-error output as successful execution for idle resync.
-	return count !== null || hasAnyOutput(cell);
+	return hasSuccessfulExecutionSnapshot({
+		executionCount: getExecutionCount(cell),
+		outputs: getOutputItems(cell),
+	});
 }
 
 function isAlreadyExecuted(cell: Cell): boolean {
 	const value = cell.model.getMetadata(EXECUTION.metadataKey);
-	return value === true || hasSuccessfulExecution(cell);
+	const stateValue = cell.model.getMetadata(EXECUTION.stateMetadataKey);
+	return isAlreadyExecutedSnapshot(value, stateValue);
 }
 
 function markExecuted(cell: Cell): void {
@@ -56,7 +48,20 @@ function markExecuted(cell: Cell): void {
 }
 
 function unmarkExecuted(cell: Cell): void {
-	cell.model.deleteMetadata(EXECUTION.metadataKey);
+	cell.model.setMetadata(EXECUTION.metadataKey, false);
+}
+
+function setExecutionState(cell: Cell, status: ExecutionStatus): void {
+	cell.model.setMetadata(
+		EXECUTION.stateMetadataKey,
+		buildExecutionState(
+			{
+				executionCount: getExecutionCount(cell),
+				outputs: getOutputItems(cell),
+			},
+			status,
+		),
+	);
 }
 
 function setExecutedAppearance(cell: Cell, executed: boolean): void {
@@ -103,20 +108,23 @@ function shouldGuardCell(cell: Cell): boolean {
 	return cell.model.type === 'code';
 }
 
-function isSuccessfulExecution(payload: any): boolean {
+function resolveExecutionStatus(payload: any, cell: Cell): ExecutionStatus {
 	if (payload?.success === true) {
-		return true;
+		return 'success';
 	}
-	if (payload?.success === false) {
-		return false;
+	if (payload?.cancel === true) {
+		return 'cancelled';
 	}
 	if (payload?.error) {
-		return false;
+		return 'error';
 	}
-	if (payload?.cell) {
-		return !hasErrorOutput(payload.cell as Cell);
+	if (payload?.success === false) {
+		return hasSuccessfulExecution(cell) ? 'success' : 'error';
 	}
-	return true;
+	if (hasSuccessfulExecution(cell)) {
+		return 'success';
+	}
+	return 'unknown';
 }
 
 function applyCellState(cell: Cell): void {
@@ -143,6 +151,7 @@ function connectNotebookHooks(): void {
 		}
 		if (isAlreadyExecuted(cell)) {
 			payload.cancel = true;
+			setExecutionState(cell, 'blocked');
 			setExecutedAppearance(cell, true);
 			await notifyBlockedExecution();
 		}
@@ -153,7 +162,9 @@ function connectNotebookHooks(): void {
 		if (!cell || !shouldGuardCell(cell)) {
 			return;
 		}
-		if (!isSuccessfulExecution(payload)) {
+		const status = resolveExecutionStatus(payload, cell);
+		setExecutionState(cell, status);
+		if (status !== 'success') {
 			unmarkExecuted(cell);
 			setExecutedAppearance(cell, false);
 			return;

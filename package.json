@@ -18,10 +18,13 @@
 		"LICENSE"
 	],
 	"scripts": {
-		"build": "npm run clean && tsc -p tsconfig.json && jupyter labextension build .",
-		"clean": "rimraf lib labextension tsconfig.tsbuildinfo",
+		"build": "npm run clean && tsc -p tsconfig.json && ../../vre/bin/python ./scripts/jupyter_wrapper.py labextension build .",
+		"clean": "node ./scripts/clean.mjs",
+		"test": "npm run test:wrapper && npm run test:freeze",
+		"test:freeze": "tsc -p tsconfig.json && node --test tests/freeze-state.test.mjs",
+		"test:wrapper": "../../vre/bin/python -m unittest discover -s tests -p \"test_*.py\"",
 		"watch": "tsc -w -p tsconfig.json",
-		"lab:develop": "jupyter labextension link ."
+		"lab:develop": "../../vre/bin/python ./scripts/jupyter_wrapper.py labextension link ."
 	},
 	"keywords": [
 		"jupyterlab-extension",
@@ -55,7 +58,6 @@
 		"@jupyterlab/builder": "^4.2.0",
 		"@types/node": "^20.14.0",
 		"eslint": "^9.6.0",
-		"rimraf": "^6.0.1",
 		"typescript": "^5.5.4"
 	}
 }
