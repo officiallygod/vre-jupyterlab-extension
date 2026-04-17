@@ -1,0 +1,39 @@
+/* Reserved for language specific editor visuals. */
+
+.jp-Notebook .cm-content {
+  text-rendering: optimizeLegibility;
+}
+
+/* High-priority fallback token colors for VRE mode.
+   These classes are emitted by stream-tokenized editors and are useful
+   when theme highlight modules override syntaxHighlighting styles. */
+.jp-Notebook .cm-editor .cm-keyword {
+  color: #7c4dff !important;
+  font-weight: 700 !important;
+}
+
+.jp-Notebook .cm-editor .cm-operator {
+  color: #ad1457 !important;
+}
+
+.jp-Notebook .cm-editor .cm-string {
+  color: #2e7d32 !important;
+}
+
+.jp-Notebook .cm-editor .cm-number {
+  color: #00897b !important;
+}
+
+.jp-Notebook .cm-editor .cm-comment {
+  color: #607d8b !important;
+  font-style: italic !important;
+}
+
+.jp-Notebook .cm-editor .cm-variableName {
+  color: var(--jp-ui-font-color1) !important;
+}
+
+.jp-Notebook .cm-editor .cm-typeName {
+  color: #6a1b9a !important;
+  font-weight: 700 !important;
+}

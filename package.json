@@ -1,0 +1,61 @@
+{
+	"name": "@virtmat/vre-jupyterlab-extension",
+	"version": "0.1.0",
+	"description": "VRE JupyterLab Extension with VRE DSL highlighting and notebook execution guard.",
+	"license": "BSD-3-Clause",
+	"type": "module",
+	"sideEffects": [
+		"style/*.css"
+	],
+	"main": "lib/index.js",
+	"types": "lib/index.d.ts",
+	"style": "style/index.css",
+	"files": [
+		"lib/**/*",
+		"labextension/**",
+		"style/*.css",
+		"README.md",
+		"LICENSE"
+	],
+	"scripts": {
+		"build": "npm run clean && tsc -p tsconfig.json && jupyter labextension build .",
+		"clean": "rimraf lib labextension tsconfig.tsbuildinfo",
+		"watch": "tsc -w -p tsconfig.json",
+		"lab:develop": "jupyter labextension link ."
+	},
+	"keywords": [
+		"jupyterlab-extension",
+		"codemirror6",
+		"dsl",
+		"vre",
+		"virtmat"
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://gitlab.kit.edu/kit/virtmat-tools"
+	},
+	"homepage": "https://gitlab.kit.edu/kit/virtmat-tools",
+	"jupyterlab": {
+		"extension": "lib/index.js",
+		"outputDir": "labextension"
+	},
+	"peerDependencies": {
+		"@jupyterlab/application": "^4.2.0"
+	},
+	"dependencies": {
+		"@codemirror/language": "^6.10.2",
+		"@codemirror/state": "^6.4.1",
+		"@jupyterlab/apputils": "^4.2.0",
+		"@jupyterlab/cells": "^4.2.0",
+		"@jupyterlab/codemirror": "^4.2.0",
+		"@jupyterlab/notebook": "^4.2.0",
+		"@lezer/highlight": "^1.2.1"
+	},
+	"devDependencies": {
+		"@jupyterlab/builder": "^4.2.0",
+		"@types/node": "^20.14.0",
+		"eslint": "^9.6.0",
+		"rimraf": "^6.0.1",
+		"typescript": "^5.5.4"
+	}
+}

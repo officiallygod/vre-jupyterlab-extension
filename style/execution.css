@@ -1,0 +1,14 @@
+.jp-Notebook .jp-Cell.vre-jupyterlab-extension__cell--executed {
+  background-color: transparent;
+  border-left: 4px solid rgba(98, 98, 98, 0.7);
+}
+
+.jp-Notebook .jp-InputArea-editor.vre-jupyterlab-extension__input-editor--executed {
+  background-color: rgba(118, 118, 118, 0.26) !important;
+  border: 1px solid rgba(92, 92, 92, 0.58);
+  border-radius: 2px;
+}
+
+.jp-Notebook .cm-editor.vre-jupyterlab-extension__cm-editor--executed {
+  background-color: rgba(118, 118, 118, 0.26) !important;
+}
