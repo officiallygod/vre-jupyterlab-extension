@@ -13,18 +13,18 @@
   "files": [
     "lib/**/*",
     "labextension/**",
+    "schema/*.json",
     "style/*.css",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "build": "npm run clean && tsc -p tsconfig.json && ../../vre/bin/python ./scripts/jupyter_wrapper.py labextension build .",
-    "clean": "node ./scripts/clean.mjs",
-    "test": "npm run test:wrapper && npm run test:freeze",
+    "build": "npm run clean && tsc -p tsconfig.json && PATH=../../vre/bin:$PATH ../../vre/bin/python -m jupyter labextension build .",
+    "clean": "rm -rf lib labextension tsconfig.tsbuildinfo",
+    "test": "npm run test:freeze",
     "test:freeze": "tsc -p tsconfig.json && node --test tests/freeze-state.test.mjs",
-    "test:wrapper": "../../vre/bin/python -m unittest discover -s tests -p \"test_*.py\"",
     "watch": "tsc -w -p tsconfig.json",
-    "lab:develop": "../../vre/bin/python ./scripts/jupyter_wrapper.py labextension link ."
+    "lab:develop": "PATH=../../vre/bin:$PATH ../../vre/bin/python -m jupyter labextension link ."
   },
   "keywords": [
     "jupyterlab-extension",
@@ -41,8 +41,25 @@
   "jupyterlab": {
     "extension": "lib/index.js",
     "outputDir": "labextension",
+    "schemaDir": "schema",
+    "discovery": {
+      "kernel": [
+        {
+          "kernel_spec": {
+            "language": "^vre-language$",
+            "display_name": "(?i).*vre.*"
+          },
+          "base": {
+            "name": "vre-language"
+          },
+          "managers": [
+            "pip"
+          ]
+        }
+      ]
+    },
     "_build": {
-      "load": "static/remoteEntry.b5d0e2dd16e35cf24f2a.js",
+      "load": "static/remoteEntry.d4387933e3929ac519b5.js",
       "extension": "./extension",
       "style": "./style"
     }
@@ -57,6 +74,7 @@
     "@jupyterlab/cells": "^4.2.0",
     "@jupyterlab/codemirror": "^4.2.0",
     "@jupyterlab/notebook": "^4.2.0",
+    "@jupyterlab/settingregistry": "^4.2.0",
     "@lezer/highlight": "^1.2.1"
   },
   "devDependencies": {

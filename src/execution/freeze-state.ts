@@ -10,6 +10,8 @@ export interface IExecutionState {
 	success: boolean;
 	executionCount: number | null;
 	outputCount: number;
+	attempts: number;
+	blockedCount: number;
 	updatedAt: string;
 }
 
@@ -50,6 +52,19 @@ export function hasSuccessfulExecutionSnapshot(snapshot: IFreezeSnapshot): boole
 }
 
 /**
+ * Derive an execution status from a snapshot.
+ */
+export function executionStatusFromSnapshot(snapshot: IFreezeSnapshot): ExecutionStatus {
+	if (hasErrorOutputItems(snapshot.outputs)) {
+		return 'error';
+	}
+	if (hasSuccessfulExecutionSnapshot(snapshot)) {
+		return 'success';
+	}
+	return 'unknown';
+}
+
+/**
  * Return true when a cell is already frozen as executed.
  */
 export function isAlreadyExecutedSnapshot(
@@ -64,14 +79,39 @@ export function isAlreadyExecutedSnapshot(
 }
 
 /**
+ * Safely parse the extension execution state metadata payload.
+ */
+export function parseExecutionState(value: unknown): Partial<IExecutionState> | undefined {
+	if (!value || typeof value !== 'object') {
+		return undefined;
+	}
+	return value as Partial<IExecutionState>;
+}
+
+/**
  * Create a serializable metadata record for a single execution attempt.
  */
-export function buildExecutionState(snapshot: IFreezeSnapshot, status: ExecutionStatus): IExecutionState {
+export function buildExecutionState(
+	snapshot: IFreezeSnapshot,
+	status: ExecutionStatus,
+	previousState?: Partial<IExecutionState>,
+): IExecutionState {
+	const priorAttempts = Number.isFinite(previousState?.attempts)
+		? Number(previousState?.attempts)
+		: 0;
+	const priorBlockedCount = Number.isFinite(previousState?.blockedCount)
+		? Number(previousState?.blockedCount)
+		: 0;
+	const attempts = status === 'blocked' ? priorAttempts : priorAttempts + 1;
+	const blockedCount = status === 'blocked' ? priorBlockedCount + 1 : priorBlockedCount;
+
 	return {
 		status,
 		success: status === 'success',
 		executionCount: normalizeExecutionCount(snapshot.executionCount),
 		outputCount: snapshot.outputs.length,
+		attempts,
+		blockedCount,
 		updatedAt: new Date().toISOString(),
 	};
 }

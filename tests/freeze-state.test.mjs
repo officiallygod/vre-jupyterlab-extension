@@ -7,6 +7,7 @@ import {
 	hasSuccessfulExecutionSnapshot,
 	isAlreadyExecutedSnapshot,
 	normalizeExecutionCount,
+	parseExecutionState,
 } from '../lib/execution/freeze-state.js';
 
 test('normalizeExecutionCount only accepts finite numbers', () => {
@@ -60,5 +61,33 @@ test('buildExecutionState creates stable metadata payload', () => {
 	assert.equal(state.success, true);
 	assert.equal(state.executionCount, 7);
 	assert.equal(state.outputCount, 1);
+	assert.equal(state.attempts, 1);
+	assert.equal(state.blockedCount, 0);
 	assert.equal(typeof state.updatedAt, 'string');
+});
+
+test('buildExecutionState increments counters with prior state', () => {
+	const prior = { attempts: 2, blockedCount: 1 };
+	const successState = buildExecutionState(
+		{ executionCount: 8, outputs: [] },
+		'success',
+		prior,
+	);
+	assert.equal(successState.attempts, 3);
+	assert.equal(successState.blockedCount, 1);
+
+	const blockedState = buildExecutionState(
+		{ executionCount: 8, outputs: [] },
+		'blocked',
+		successState,
+	);
+	assert.equal(blockedState.attempts, 3);
+	assert.equal(blockedState.blockedCount, 2);
+});
+
+test('parseExecutionState returns undefined for non-object values', () => {
+	assert.equal(parseExecutionState(undefined), undefined);
+	assert.equal(parseExecutionState(null), undefined);
+	assert.equal(parseExecutionState('state'), undefined);
+	assert.deepEqual(parseExecutionState({ attempts: 1 }), { attempts: 1 });
 });

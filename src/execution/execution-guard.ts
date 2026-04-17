@@ -5,12 +5,12 @@ import { EXECUTION } from '../config/constants';
 import {
 	buildExecutionState,
 	ExecutionStatus,
-	hasSuccessfulExecutionSnapshot,
+	hasErrorOutputItems,
 	isAlreadyExecutedSnapshot,
+	parseExecutionState,
 } from './freeze-state';
 
 let hooksConnected = false;
-const watchedModels = new WeakSet<any>();
 
 function getExecutionCount(cell: Cell): number | null {
 	const count = (cell.model as any).executionCount;
@@ -30,11 +30,11 @@ function getOutputItems(cell: Cell): unknown[] {
 	return items;
 }
 
-function hasSuccessfulExecution(cell: Cell): boolean {
-	return hasSuccessfulExecutionSnapshot({
+function getCellSnapshot(cell: Cell): { executionCount: unknown; outputs: unknown[] } {
+	return {
 		executionCount: getExecutionCount(cell),
 		outputs: getOutputItems(cell),
-	});
+	};
 }
 
 function isAlreadyExecuted(cell: Cell): boolean {
@@ -43,25 +43,26 @@ function isAlreadyExecuted(cell: Cell): boolean {
 	return isAlreadyExecutedSnapshot(value, stateValue);
 }
 
-function markExecuted(cell: Cell): void {
-	cell.model.setMetadata(EXECUTION.metadataKey, true);
-}
-
-function unmarkExecuted(cell: Cell): void {
-	cell.model.setMetadata(EXECUTION.metadataKey, false);
+function setExecutedMetadata(cell: Cell, executed: boolean): void {
+	cell.model.setMetadata(EXECUTION.metadataKey, executed);
 }
 
 function setExecutionState(cell: Cell, status: ExecutionStatus): void {
+	const previousState = parseExecutionState(cell.model.getMetadata(EXECUTION.stateMetadataKey));
 	cell.model.setMetadata(
 		EXECUTION.stateMetadataKey,
-		buildExecutionState(
-			{
-				executionCount: getExecutionCount(cell),
-				outputs: getOutputItems(cell),
-			},
-			status,
-		),
+		buildExecutionState(getCellSnapshot(cell), status, previousState),
 	);
+}
+
+function setCellFrozenState(cell: Cell, shouldFreeze: boolean): void {
+	setExecutedMetadata(cell, shouldFreeze);
+	setExecutedAppearance(cell, shouldFreeze);
+}
+
+function applyExecutionStatus(cell: Cell, status: ExecutionStatus): void {
+	setExecutionState(cell, status);
+	setCellFrozenState(cell, status === 'success');
 }
 
 function setExecutedAppearance(cell: Cell, executed: boolean): void {
@@ -109,6 +110,7 @@ function shouldGuardCell(cell: Cell): boolean {
 }
 
 function resolveExecutionStatus(payload: any, cell: Cell): ExecutionStatus {
+	// Keep this conservative: only explicit success locks the cell.
 	if (payload?.success === true) {
 		return 'success';
 	}
@@ -119,32 +121,37 @@ function resolveExecutionStatus(payload: any, cell: Cell): ExecutionStatus {
 		return 'error';
 	}
 	if (payload?.success === false) {
-		return hasSuccessfulExecution(cell) ? 'success' : 'error';
+		return 'error';
 	}
-	if (hasSuccessfulExecution(cell)) {
-		return 'success';
+	const snapshot = getCellSnapshot(cell);
+	if (hasErrorOutputItems(snapshot.outputs)) {
+		return 'error';
 	}
 	return 'unknown';
 }
 
-function applyCellState(cell: Cell): void {
+function applyCellState(cell: Cell, isPluginEnabled: () => boolean): void {
 	if (!shouldGuardCell(cell)) {
 		return;
 	}
-	const executed = isAlreadyExecuted(cell);
-	if (executed) {
-		markExecuted(cell);
+	if (!isPluginEnabled()) {
+		setExecutedAppearance(cell, false);
+		return;
 	}
-	setExecutedAppearance(cell, executed);
+	const executed = isAlreadyExecuted(cell);
+	setCellFrozenState(cell, executed);
 }
 
-function connectNotebookHooks(): void {
+function connectNotebookHooks(isPluginEnabled: () => boolean): void {
 	if (hooksConnected) {
 		return;
 	}
 	hooksConnected = true;
 
 	(NotebookActions as any).executionScheduled.connect(async (_: unknown, payload: any) => {
+		if (!isPluginEnabled()) {
+			return;
+		}
 		const cell = payload?.cell as Cell | null;
 		if (!cell || !shouldGuardCell(cell)) {
 			return;
@@ -158,27 +165,23 @@ function connectNotebookHooks(): void {
 	});
 
 	(NotebookActions as any).executed.connect((_sender: unknown, payload: any) => {
+		if (!isPluginEnabled()) {
+			return;
+		}
 		const cell = payload?.cell as Cell | null;
 		if (!cell || !shouldGuardCell(cell)) {
 			return;
 		}
 		const status = resolveExecutionStatus(payload, cell);
-		setExecutionState(cell, status);
-		if (status !== 'success') {
-			unmarkExecuted(cell);
-			setExecutedAppearance(cell, false);
-			return;
-		}
-		markExecuted(cell);
-		setExecutedAppearance(cell, true);
+		applyExecutionStatus(cell, status);
 	});
 }
 
-function syncNotebookAppearance(panel: NotebookPanel): void {
+function syncNotebookAppearance(panel: NotebookPanel, isPluginEnabled: () => boolean): void {
 	const notebook = panel.content;
 	const refresh = () => {
 		notebook.widgets.forEach((cell) => {
-			applyCellState(cell);
+			applyCellState(cell, isPluginEnabled);
 		});
 	};
 
@@ -194,40 +197,25 @@ function syncNotebookAppearance(panel: NotebookPanel): void {
 	});
 }
 
-function watchCellModel(cell: Cell): void {
-	const modelAny = cell.model as any;
-	if (watchedModels.has(modelAny)) {
-		return;
-	}
-	watchedModels.add(modelAny);
-	if (modelAny.stateChanged?.connect) {
-		modelAny.stateChanged.connect(() => applyCellState(cell));
-	}
-	if (modelAny.outputs?.changed?.connect) {
-		modelAny.outputs.changed.connect(() => applyCellState(cell));
-	}
-}
-
-function applyPanelState(panel: NotebookPanel): void {
+function applyPanelState(panel: NotebookPanel, isPluginEnabled: () => boolean): void {
 	const notebook = panel.content;
 	notebook.widgets.forEach((cell) => {
 		if (cell.model.type !== 'code') {
 			return;
 		}
-		watchCellModel(cell);
-		applyCellState(cell);
+		applyCellState(cell, isPluginEnabled);
 	});
 }
 
 /**
  * Activate execution guard integration for a notebook panel.
  */
-export function activateExecutionGuard(panel: NotebookPanel): void {
+export function activateExecutionGuard(panel: NotebookPanel, isPluginEnabled: () => boolean): void {
 	panel.context.ready
 		.then(() => {
-			connectNotebookHooks();
-			syncNotebookAppearance(panel);
-			applyPanelState(panel);
+			connectNotebookHooks(isPluginEnabled);
+			syncNotebookAppearance(panel, isPluginEnabled);
+			applyPanelState(panel, isPluginEnabled);
 		})
 		.catch(() => {
 			// Ignore startup race errors and allow notebook to continue.

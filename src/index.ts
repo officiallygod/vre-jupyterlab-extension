@@ -2,9 +2,10 @@ import { LanguageSupport } from '@codemirror/language';
 import { JupyterFrontEnd, JupyterFrontEndPlugin } from '@jupyterlab/application';
 import { IEditorExtensionRegistry, IEditorLanguageRegistry } from '@jupyterlab/codemirror';
 import { INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
+import { ISettingRegistry } from '@jupyterlab/settingregistry';
 import { activateExecutionGuard } from './execution/execution-guard';
 import { createVreLanguageExtension } from './language/vre-language';
-import { attachNotebookMimeSync } from './notebook/mime-sync';
+import { attachNotebookMimeSync, refreshNotebookMime } from './notebook/mime-sync';
 import { LANGUAGE, PLUGIN_ID } from './config/constants';
 import { DEFAULT_LANGUAGE_OPTIONS } from './config/defaults';
 import '../style/index.css';
@@ -26,13 +27,38 @@ const plugin: JupyterFrontEndPlugin<void> = {
 	id: PLUGIN_ID,
 	autoStart: true,
 	requires: [IEditorLanguageRegistry, IEditorExtensionRegistry, INotebookTracker],
+	optional: [ISettingRegistry],
 	activate: async (
 		_app: JupyterFrontEnd,
 		languageRegistry: IEditorLanguageRegistry,
 		editorExtensionRegistry: IEditorExtensionRegistry,
-		notebookTracker: INotebookTracker
+		notebookTracker: INotebookTracker,
+		settingRegistry: ISettingRegistry | null,
 	) => {
 		const languageSupport = buildLanguageExtension();
+		let enabled = true;
+
+		const refreshAllPanels = () => {
+			notebookTracker.forEach((panel) => {
+				refreshNotebookMime(panel);
+			});
+		};
+
+		if (settingRegistry) {
+			try {
+				const settings = await settingRegistry.load(PLUGIN_ID);
+				const syncEnabledSetting = () => {
+					enabled = settings.composite['enabled'] !== false;
+					refreshAllPanels();
+				};
+				syncEnabledSetting();
+				settings.changed.connect(() => {
+					syncEnabledSetting();
+				});
+			} catch {
+				// Use defaults when settings are unavailable.
+			}
+		}
 
 		languageRegistry.addLanguage({
 			name: 'VRE DSL',
@@ -50,8 +76,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
 		});
 
 		const wireNotebookPanel = (panel: NotebookPanel) => {
-			attachNotebookMimeSync(panel, () => true);
-			activateExecutionGuard(panel);
+			attachNotebookMimeSync(panel, () => enabled);
+			activateExecutionGuard(panel, () => enabled);
 		};
 
 		notebookTracker.widgetAdded.connect((_sender, panel) => {
