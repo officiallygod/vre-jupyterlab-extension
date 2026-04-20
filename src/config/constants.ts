@@ -1,6 +1,18 @@
 /** Unique JupyterLab plugin identifier. */
 export const PLUGIN_ID = 'vre-jupyterlab-extension:plugin';
 
+/** Plugin setting keys used for persisted runtime toggles. */
+export const SETTINGS = {
+  enabled: 'enabled',
+  cellReadonlyDesignEnabled: 'cellReadonlyDesignEnabled'
+} as const;
+
+/** Command IDs for user-facing plugin toggles. */
+export const COMMANDS = {
+  toggleReadonlyDesign: `${PLUGIN_ID}:toggle-readonly-design`,
+  toggleExtension: `${PLUGIN_ID}:toggle-extension`
+} as const;
+
 /** Language-related constants for VRE CodeMirror integration. */
 export const LANGUAGE = {
   mime: 'text/x-vre',
@@ -12,6 +24,7 @@ export const LANGUAGE = {
 /** BEM-style class and metadata constants for execution guard visuals/state. */
 export const EXECUTION = {
   metadataKey: 'vre.executed',
+  stateMetadataKey: 'vre.executionState',
   executedCellClass: 'vre-jupyterlab-extension__cell--executed',
   executedInputClass: 'vre-jupyterlab-extension__input-editor--executed',
   executedEditorClass: 'vre-jupyterlab-extension__cm-editor--executed'

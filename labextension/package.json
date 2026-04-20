@@ -13,15 +13,18 @@
   "files": [
     "lib/**/*",
     "labextension/**",
+    "schema/*.json",
     "style/*.css",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "build": "npm run clean && tsc -p tsconfig.json && jupyter labextension build .",
-    "clean": "rimraf lib labextension tsconfig.tsbuildinfo",
+    "build": "npm run clean && tsc -p tsconfig.json && PATH=../../vre/bin:$PATH ../../vre/bin/python -m jupyter labextension build .",
+    "clean": "rm -rf lib labextension tsconfig.tsbuildinfo",
+    "test": "npm run test:freeze",
+    "test:freeze": "tsc -p tsconfig.json && node --test tests/freeze-state.test.mjs",
     "watch": "tsc -w -p tsconfig.json",
-    "lab:develop": "jupyter labextension link ."
+    "lab:develop": "PATH=../../vre/bin:$PATH ../../vre/bin/python -m jupyter labextension link ."
   },
   "keywords": [
     "jupyterlab-extension",
@@ -38,8 +41,25 @@
   "jupyterlab": {
     "extension": "lib/index.js",
     "outputDir": "labextension",
+    "schemaDir": "schema",
+    "discovery": {
+      "kernel": [
+        {
+          "kernel_spec": {
+            "language": "^vre-language$",
+            "display_name": "(?i).*vre.*"
+          },
+          "base": {
+            "name": "vre-language"
+          },
+          "managers": [
+            "pip"
+          ]
+        }
+      ]
+    },
     "_build": {
-      "load": "static\\remoteEntry.acb50ebd8d1254ad90de.js",
+      "load": "static/remoteEntry.b7d0e8222b4c7dd4087b.js",
       "extension": "./extension",
       "style": "./style"
     }
@@ -54,13 +74,13 @@
     "@jupyterlab/cells": "^4.2.0",
     "@jupyterlab/codemirror": "^4.2.0",
     "@jupyterlab/notebook": "^4.2.0",
+    "@jupyterlab/settingregistry": "^4.2.0",
     "@lezer/highlight": "^1.2.1"
   },
   "devDependencies": {
     "@jupyterlab/builder": "^4.2.0",
     "@types/node": "^20.14.0",
     "eslint": "^9.6.0",
-    "rimraf": "^6.0.1",
     "typescript": "^5.5.4"
   }
 }
