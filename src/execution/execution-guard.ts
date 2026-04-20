@@ -2,67 +2,103 @@ import { showDialog, Dialog } from '@jupyterlab/apputils';
 import { Cell } from '@jupyterlab/cells';
 import { NotebookActions, NotebookPanel } from '@jupyterlab/notebook';
 import { EXECUTION } from '../config/constants';
+import {
+	buildState,
+	ExecutionStatus,
+	hasErrorOutputs,
+	isExecutedSnapshot,
+	parseState,
+} from './freeze-state';
 
 let hooksConnected = false;
-const watchedModels = new WeakSet<any>();
 
-function getExecutionCount(cell: Cell): number | null {
+/**
+ * Read the notebook model execution count for a cell.
+ */
+function readExecutionCount(cell: Cell): number | null {
 	const count = (cell.model as any).executionCount;
 	return typeof count === 'number' && Number.isFinite(count) ? count : null;
 }
 
-function hasErrorOutput(cell: Cell): boolean {
+/**
+ * Read the notebook model outputs for a cell.
+ */
+function readOutputItems(cell: Cell): unknown[] {
 	const outputs = (cell.model as any).outputs;
 	if (!outputs) {
-		return false;
+		return [];
 	}
 	const length = typeof outputs.length === 'number' ? outputs.length : 0;
+	const items: unknown[] = [];
 	for (let i = 0; i < length; i += 1) {
-		const item = typeof outputs.get === 'function' ? outputs.get(i) : outputs[i];
-		const outputType = item?.output_type ?? item?.type;
-		if (outputType === 'error') {
-			return true;
-		}
+		items.push(typeof outputs.get === 'function' ? outputs.get(i) : outputs[i]);
 	}
-	return false;
+	return items;
 }
 
-function hasAnyOutput(cell: Cell): boolean {
-	const outputs = (cell.model as any).outputs;
-	if (!outputs) {
-		return false;
-	}
-	const length = typeof outputs.length === 'number' ? outputs.length : 0;
-	return length > 0;
+/**
+ * Capture the pieces of cell state needed for execution metadata.
+ */
+function readCellSnapshot(cell: Cell): { executionCount: unknown; outputs: unknown[] } {
+	return {
+		executionCount: readExecutionCount(cell),
+		outputs: readOutputItems(cell),
+	};
 }
 
-function hasSuccessfulExecution(cell: Cell): boolean {
-	const count = getExecutionCount(cell);
-	if (hasErrorOutput(cell)) {
-		return false;
-	}
-	// Some custom kernels may not reliably set executionCount.
-	// Treat any non-error output as successful execution for idle resync.
-	return count !== null || hasAnyOutput(cell);
-}
-
-function isAlreadyExecuted(cell: Cell): boolean {
+/**
+ * Return true when the cell is already marked as executed.
+ */
+function isExecuted(cell: Cell): boolean {
 	const value = cell.model.getMetadata(EXECUTION.metadataKey);
-	return value === true || hasSuccessfulExecution(cell);
+	const stateValue = cell.model.getMetadata(EXECUTION.stateMetadataKey);
+	return isExecutedSnapshot(value, stateValue);
 }
 
-function markExecuted(cell: Cell): void {
-	cell.model.setMetadata(EXECUTION.metadataKey, true);
+/**
+ * Store the executed flag in notebook metadata.
+ */
+function setExecutedMetadata(cell: Cell, executed: boolean): void {
+	cell.model.setMetadata(EXECUTION.metadataKey, executed);
 }
 
-function unmarkExecuted(cell: Cell): void {
-	cell.model.deleteMetadata(EXECUTION.metadataKey);
+/**
+ * Store the execution state payload in notebook metadata.
+ */
+function setExecutionState(cell: Cell, status: ExecutionStatus): void {
+	const previousState = parseState(cell.model.getMetadata(EXECUTION.stateMetadataKey));
+	cell.model.setMetadata(
+		EXECUTION.stateMetadataKey,
+		buildState(readCellSnapshot(cell), status, previousState),
+	);
 }
 
-function setExecutedAppearance(cell: Cell, executed: boolean): void {
+/**
+ * Apply or clear the executed visual treatment.
+ */
+function setFrozenState(cell: Cell, shouldFreeze: boolean, showReadonlyDesign: boolean): void {
+	setExecutedMetadata(cell, shouldFreeze);
+	setReadonlyAppearance(cell, shouldFreeze && showReadonlyDesign);
+}
+
+/**
+ * Persist the execution status and sync the visual state.
+ */
+function syncExecutionStatus(
+	cell: Cell,
+	status: ExecutionStatus,
+	isReadonlyDesignEnabled: () => boolean,
+): void {
+	setExecutionState(cell, status);
+	setFrozenState(cell, status === 'success', isReadonlyDesignEnabled());
+}
+
+/**
+ * Apply or clear readonly styling on a cell.
+ */
+function setReadonlyAppearance(cell: Cell, executed: boolean): void {
 	const shouldLock = executed;
 	const cellAny = cell as any;
-	// Use JupyterLab cell APIs/metadata for locking behavior.
 	cellAny.readOnly = shouldLock;
 	cell.model.setMetadata('editable', !shouldLock);
 	cell.model.setMetadata('deletable', !shouldLock);
@@ -91,6 +127,9 @@ function setExecutedAppearance(cell: Cell, executed: boolean): void {
 	cell.removeClass(EXECUTION.executedCellClass);
 }
 
+/**
+ * Show the block message for a repeated execution attempt.
+ */
 async function notifyBlockedExecution(): Promise<void> {
 	await showDialog({
 		title: 'VRE Cell Already Executed',
@@ -103,71 +142,100 @@ function shouldGuardCell(cell: Cell): boolean {
 	return cell.model.type === 'code';
 }
 
-function isSuccessfulExecution(payload: any): boolean {
+/**
+ * Infer the execution status from NotebookActions payloads.
+ */
+function readExecutionStatus(payload: any, cell: Cell): ExecutionStatus {
 	if (payload?.success === true) {
-		return true;
+		return 'success';
 	}
-	if (payload?.success === false) {
-		return false;
+	if (payload?.cancel === true) {
+		return 'cancelled';
 	}
 	if (payload?.error) {
-		return false;
+		return 'error';
 	}
-	if (payload?.cell) {
-		return !hasErrorOutput(payload.cell as Cell);
+	if (payload?.success === false) {
+		return 'error';
 	}
-	return true;
+	const snapshot = readCellSnapshot(cell);
+	if (hasErrorOutputs(snapshot.outputs)) {
+		return 'error';
+	}
+	return 'unknown';
 }
 
-function applyCellState(cell: Cell): void {
+/**
+ * Sync one cell's guarded state.
+ */
+function syncCellState(
+	cell: Cell,
+	isPluginEnabled: () => boolean,
+	isReadonlyDesignEnabled: () => boolean,
+): void {
 	if (!shouldGuardCell(cell)) {
 		return;
 	}
-	const executed = isAlreadyExecuted(cell);
-	if (executed) {
-		markExecuted(cell);
+	if (!isPluginEnabled() || !isReadonlyDesignEnabled()) {
+		setReadonlyAppearance(cell, false);
+		return;
 	}
-	setExecutedAppearance(cell, executed);
+	setFrozenState(cell, isExecuted(cell), true);
 }
 
-function connectNotebookHooks(): void {
+/**
+ * Connect global notebook execution hooks once.
+ */
+function bindNotebookHooks(
+	isPluginEnabled: () => boolean,
+	isReadonlyDesignEnabled: () => boolean,
+): void {
 	if (hooksConnected) {
 		return;
 	}
 	hooksConnected = true;
 
 	(NotebookActions as any).executionScheduled.connect(async (_: unknown, payload: any) => {
+		if (!isPluginEnabled()) {
+			return;
+		}
 		const cell = payload?.cell as Cell | null;
 		if (!cell || !shouldGuardCell(cell)) {
 			return;
 		}
-		if (isAlreadyExecuted(cell)) {
+		if (isExecuted(cell)) {
 			payload.cancel = true;
-			setExecutedAppearance(cell, true);
+			setExecutionState(cell, 'blocked');
+			setReadonlyAppearance(cell, isReadonlyDesignEnabled());
 			await notifyBlockedExecution();
 		}
 	});
 
 	(NotebookActions as any).executed.connect((_sender: unknown, payload: any) => {
+		if (!isPluginEnabled()) {
+			return;
+		}
 		const cell = payload?.cell as Cell | null;
 		if (!cell || !shouldGuardCell(cell)) {
 			return;
 		}
-		if (!isSuccessfulExecution(payload)) {
-			unmarkExecuted(cell);
-			setExecutedAppearance(cell, false);
-			return;
-		}
-		markExecuted(cell);
-		setExecutedAppearance(cell, true);
+		const status = readExecutionStatus(payload, cell);
+		syncExecutionStatus(cell, status, isReadonlyDesignEnabled);
 	});
 }
 
-function syncNotebookAppearance(panel: NotebookPanel): void {
+/**
+ * Keep all guarded cells in a notebook visually up to date.
+ */
+function syncNotebookView(
+	panel: NotebookPanel,
+	isPluginEnabled: () => boolean,
+	isReadonlyDesignEnabled: () => boolean,
+): void {
 	const notebook = panel.content;
 	const refresh = () => {
 		notebook.widgets.forEach((cell) => {
-			applyCellState(cell);
+			syncCellState(cell, isPluginEnabled, isReadonlyDesignEnabled);
 		});
 	};
 
@@ -183,42 +251,52 @@ function syncNotebookAppearance(panel: NotebookPanel): void {
 	});
 }
 
-function watchCellModel(cell: Cell): void {
-	const modelAny = cell.model as any;
-	if (watchedModels.has(modelAny)) {
-		return;
-	}
-	watchedModels.add(modelAny);
-	if (modelAny.stateChanged?.connect) {
-		modelAny.stateChanged.connect(() => applyCellState(cell));
-	}
-	if (modelAny.outputs?.changed?.connect) {
-		modelAny.outputs.changed.connect(() => applyCellState(cell));
-	}
-}
-
-function applyPanelState(panel: NotebookPanel): void {
+/**
+ * Refresh the existing code cells in a notebook panel.
+ */
+function syncPanelCells(
+	panel: NotebookPanel,
+	isPluginEnabled: () => boolean,
+	isReadonlyDesignEnabled: () => boolean,
+): void {
 	const notebook = panel.content;
 	notebook.widgets.forEach((cell) => {
 		if (cell.model.type !== 'code') {
 			return;
 		}
-		watchCellModel(cell);
-		applyCellState(cell);
+		syncCellState(cell, isPluginEnabled, isReadonlyDesignEnabled);
 	});
 }
 
 /**
- * Activate execution guard integration for a notebook panel.
+ * Wire execution-guard behavior into a notebook panel.
  */
-export function activateExecutionGuard(panel: NotebookPanel): void {
+export function activateExecutionGuard(
+	panel: NotebookPanel,
+	isPluginEnabled: () => boolean,
+	isReadonlyDesignEnabled: () => boolean,
+): void {
+	(panel as any).__vreRefreshExecutionGuard = () => {
+		syncPanelCells(panel, isPluginEnabled, isReadonlyDesignEnabled);
+	};
+
 	panel.context.ready
 		.then(() => {
-			connectNotebookHooks();
-			syncNotebookAppearance(panel);
-			applyPanelState(panel);
+			bindNotebookHooks(isPluginEnabled, isReadonlyDesignEnabled);
+			syncNotebookView(panel, isPluginEnabled, isReadonlyDesignEnabled);
+			syncPanelCells(panel, isPluginEnabled, isReadonlyDesignEnabled);
 		})
 		.catch(() => {
 			// Ignore startup race errors and allow notebook to continue.
 		});
+}
+
+/**
+ * Force-refresh execution-guard appearance for a previously wired notebook panel.
+ */
+export function refreshExecutionGuard(panel: NotebookPanel): void {
+	const fn = (panel as any).__vreRefreshExecutionGuard;
+	if (typeof fn === 'function') {
+		fn();
+	}
 }

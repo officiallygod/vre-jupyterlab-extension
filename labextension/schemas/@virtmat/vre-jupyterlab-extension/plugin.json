@@ -1,0 +1,20 @@
+{
+  "title": "VRE JupyterLab Extension",
+  "description": "Settings for VRE notebook MIME sync and execution guard integration.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enable VRE extension",
+      "description": "Enable VRE MIME sync and execution guard behavior in notebook panels.",
+      "default": true
+    },
+    "cellReadonlyDesignEnabled": {
+      "type": "boolean",
+      "title": "Enable cell readonly design",
+      "description": "Lock already-executed VRE cells and apply executed-cell styling.",
+      "default": true
+    }
+  }
+}
