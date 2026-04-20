@@ -219,7 +219,24 @@ function bindNotebookHooks(
 		if (!cell || !shouldGuardCell(cell)) {
 			return;
 		}
+		const alreadyExecuted = isExecuted(cell);
+
+		// A blocked re-run emits a cancelled execution event; ignore it so we do not
+		// overwrite blocked metadata and accidentally unfreeze the cell.
+		if (payload?.cancel === true && alreadyExecuted) {
+			setFrozenState(cell, true, isReadonlyDesignEnabled());
+			return;
+		}
+
 		const status = readExecutionStatus(payload, cell);
+
+		// Defensive fallback: once frozen as executed, do not allow non-success events
+		// to transition a cell back to executable.
+		if (alreadyExecuted && status !== 'success') {
+			setFrozenState(cell, true, isReadonlyDesignEnabled());
+			return;
+		}
+
 		syncExecutionStatus(cell, status, isReadonlyDesignEnabled);
 	});
 }
