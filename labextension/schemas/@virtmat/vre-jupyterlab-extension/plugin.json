@@ -9,6 +9,12 @@
       "title": "Enable VRE extension",
       "description": "Enable VRE MIME sync and execution guard behavior in notebook panels.",
       "default": true
+    },
+    "cellReadonlyDesignEnabled": {
+      "type": "boolean",
+      "title": "Enable cell readonly design",
+      "description": "Lock already-executed VRE cells and apply executed-cell styling.",
+      "default": true
     }
   }
 }

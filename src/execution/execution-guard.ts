@@ -3,21 +3,27 @@ import { Cell } from '@jupyterlab/cells';
 import { NotebookActions, NotebookPanel } from '@jupyterlab/notebook';
 import { EXECUTION } from '../config/constants';
 import {
-	buildExecutionState,
+	buildState,
 	ExecutionStatus,
-	hasErrorOutputItems,
-	isAlreadyExecutedSnapshot,
-	parseExecutionState,
+	hasErrorOutputs,
+	isExecutedSnapshot,
+	parseState,
 } from './freeze-state';
 
 let hooksConnected = false;
 
-function getExecutionCount(cell: Cell): number | null {
+/**
+ * Read the notebook model execution count for a cell.
+ */
+function readExecutionCount(cell: Cell): number | null {
 	const count = (cell.model as any).executionCount;
 	return typeof count === 'number' && Number.isFinite(count) ? count : null;
 }
 
-function getOutputItems(cell: Cell): unknown[] {
+/**
+ * Read the notebook model outputs for a cell.
+ */
+function readOutputItems(cell: Cell): unknown[] {
 	const outputs = (cell.model as any).outputs;
 	if (!outputs) {
 		return [];
@@ -30,45 +36,69 @@ function getOutputItems(cell: Cell): unknown[] {
 	return items;
 }
 
-function getCellSnapshot(cell: Cell): { executionCount: unknown; outputs: unknown[] } {
+/**
+ * Capture the pieces of cell state needed for execution metadata.
+ */
+function readCellSnapshot(cell: Cell): { executionCount: unknown; outputs: unknown[] } {
 	return {
-		executionCount: getExecutionCount(cell),
-		outputs: getOutputItems(cell),
+		executionCount: readExecutionCount(cell),
+		outputs: readOutputItems(cell),
 	};
 }
 
-function isAlreadyExecuted(cell: Cell): boolean {
+/**
+ * Return true when the cell is already marked as executed.
+ */
+function isExecuted(cell: Cell): boolean {
 	const value = cell.model.getMetadata(EXECUTION.metadataKey);
 	const stateValue = cell.model.getMetadata(EXECUTION.stateMetadataKey);
-	return isAlreadyExecutedSnapshot(value, stateValue);
+	return isExecutedSnapshot(value, stateValue);
 }
 
+/**
+ * Store the executed flag in notebook metadata.
+ */
 function setExecutedMetadata(cell: Cell, executed: boolean): void {
 	cell.model.setMetadata(EXECUTION.metadataKey, executed);
 }
 
+/**
+ * Store the execution state payload in notebook metadata.
+ */
 function setExecutionState(cell: Cell, status: ExecutionStatus): void {
-	const previousState = parseExecutionState(cell.model.getMetadata(EXECUTION.stateMetadataKey));
+	const previousState = parseState(cell.model.getMetadata(EXECUTION.stateMetadataKey));
 	cell.model.setMetadata(
 		EXECUTION.stateMetadataKey,
-		buildExecutionState(getCellSnapshot(cell), status, previousState),
+		buildState(readCellSnapshot(cell), status, previousState),
 	);
 }
 
-function setCellFrozenState(cell: Cell, shouldFreeze: boolean): void {
+/**
+ * Apply or clear the executed visual treatment.
+ */
+function setFrozenState(cell: Cell, shouldFreeze: boolean, showReadonlyDesign: boolean): void {
 	setExecutedMetadata(cell, shouldFreeze);
-	setExecutedAppearance(cell, shouldFreeze);
+	setReadonlyAppearance(cell, shouldFreeze && showReadonlyDesign);
 }
 
-function applyExecutionStatus(cell: Cell, status: ExecutionStatus): void {
+/**
+ * Persist the execution status and sync the visual state.
+ */
+function syncExecutionStatus(
+	cell: Cell,
+	status: ExecutionStatus,
+	isReadonlyDesignEnabled: () => boolean,
+): void {
 	setExecutionState(cell, status);
-	setCellFrozenState(cell, status === 'success');
+	setFrozenState(cell, status === 'success', isReadonlyDesignEnabled());
 }
 
-function setExecutedAppearance(cell: Cell, executed: boolean): void {
+/**
+ * Apply or clear readonly styling on a cell.
+ */
+function setReadonlyAppearance(cell: Cell, executed: boolean): void {
 	const shouldLock = executed;
 	const cellAny = cell as any;
-	// Use JupyterLab cell APIs/metadata for locking behavior.
 	cellAny.readOnly = shouldLock;
 	cell.model.setMetadata('editable', !shouldLock);
 	cell.model.setMetadata('deletable', !shouldLock);
@@ -97,6 +127,9 @@ function setExecutedAppearance(cell: Cell, executed: boolean): void {
 	cell.removeClass(EXECUTION.executedCellClass);
 }
 
+/**
+ * Show the block message for a repeated execution attempt.
+ */
 async function notifyBlockedExecution(): Promise<void> {
 	await showDialog({
 		title: 'VRE Cell Already Executed',
@@ -109,8 +142,10 @@ function shouldGuardCell(cell: Cell): boolean {
 	return cell.model.type === 'code';
 }
 
-function resolveExecutionStatus(payload: any, cell: Cell): ExecutionStatus {
-	// Keep this conservative: only explicit success locks the cell.
+/**
+ * Infer the execution status from NotebookActions payloads.
+ */
+function readExecutionStatus(payload: any, cell: Cell): ExecutionStatus {
 	if (payload?.success === true) {
 		return 'success';
 	}
@@ -123,26 +158,38 @@ function resolveExecutionStatus(payload: any, cell: Cell): ExecutionStatus {
 	if (payload?.success === false) {
 		return 'error';
 	}
-	const snapshot = getCellSnapshot(cell);
-	if (hasErrorOutputItems(snapshot.outputs)) {
+	const snapshot = readCellSnapshot(cell);
+	if (hasErrorOutputs(snapshot.outputs)) {
 		return 'error';
 	}
 	return 'unknown';
 }
 
-function applyCellState(cell: Cell, isPluginEnabled: () => boolean): void {
+/**
+ * Sync one cell's guarded state.
+ */
+function syncCellState(
+	cell: Cell,
+	isPluginEnabled: () => boolean,
+	isReadonlyDesignEnabled: () => boolean,
+): void {
 	if (!shouldGuardCell(cell)) {
 		return;
 	}
-	if (!isPluginEnabled()) {
-		setExecutedAppearance(cell, false);
+	if (!isPluginEnabled() || !isReadonlyDesignEnabled()) {
+		setReadonlyAppearance(cell, false);
 		return;
 	}
-	const executed = isAlreadyExecuted(cell);
-	setCellFrozenState(cell, executed);
+	setFrozenState(cell, isExecuted(cell), true);
 }
 
-function connectNotebookHooks(isPluginEnabled: () => boolean): void {
+/**
+ * Connect global notebook execution hooks once.
+ */
+function bindNotebookHooks(
+	isPluginEnabled: () => boolean,
+	isReadonlyDesignEnabled: () => boolean,
+): void {
 	if (hooksConnected) {
 		return;
 	}
@@ -156,10 +203,10 @@ function connectNotebookHooks(isPluginEnabled: () => boolean): void {
 		if (!cell || !shouldGuardCell(cell)) {
 			return;
 		}
-		if (isAlreadyExecuted(cell)) {
+		if (isExecuted(cell)) {
 			payload.cancel = true;
 			setExecutionState(cell, 'blocked');
-			setExecutedAppearance(cell, true);
+			setReadonlyAppearance(cell, isReadonlyDesignEnabled());
 			await notifyBlockedExecution();
 		}
 	});
@@ -172,16 +219,23 @@ function connectNotebookHooks(isPluginEnabled: () => boolean): void {
 		if (!cell || !shouldGuardCell(cell)) {
 			return;
 		}
-		const status = resolveExecutionStatus(payload, cell);
-		applyExecutionStatus(cell, status);
+		const status = readExecutionStatus(payload, cell);
+		syncExecutionStatus(cell, status, isReadonlyDesignEnabled);
 	});
 }
 
-function syncNotebookAppearance(panel: NotebookPanel, isPluginEnabled: () => boolean): void {
+/**
+ * Keep all guarded cells in a notebook visually up to date.
+ */
+function syncNotebookView(
+	panel: NotebookPanel,
+	isPluginEnabled: () => boolean,
+	isReadonlyDesignEnabled: () => boolean,
+): void {
 	const notebook = panel.content;
 	const refresh = () => {
 		notebook.widgets.forEach((cell) => {
-			applyCellState(cell, isPluginEnabled);
+			syncCellState(cell, isPluginEnabled, isReadonlyDesignEnabled);
 		});
 	};
 
@@ -197,27 +251,52 @@ function syncNotebookAppearance(panel: NotebookPanel, isPluginEnabled: () => boo
 	});
 }
 
-function applyPanelState(panel: NotebookPanel, isPluginEnabled: () => boolean): void {
+/**
+ * Refresh the existing code cells in a notebook panel.
+ */
+function syncPanelCells(
+	panel: NotebookPanel,
+	isPluginEnabled: () => boolean,
+	isReadonlyDesignEnabled: () => boolean,
+): void {
 	const notebook = panel.content;
 	notebook.widgets.forEach((cell) => {
 		if (cell.model.type !== 'code') {
 			return;
 		}
-		applyCellState(cell, isPluginEnabled);
+		syncCellState(cell, isPluginEnabled, isReadonlyDesignEnabled);
 	});
 }
 
 /**
- * Activate execution guard integration for a notebook panel.
+ * Wire execution-guard behavior into a notebook panel.
  */
-export function activateExecutionGuard(panel: NotebookPanel, isPluginEnabled: () => boolean): void {
+export function activateExecutionGuard(
+	panel: NotebookPanel,
+	isPluginEnabled: () => boolean,
+	isReadonlyDesignEnabled: () => boolean,
+): void {
+	(panel as any).__vreRefreshExecutionGuard = () => {
+		syncPanelCells(panel, isPluginEnabled, isReadonlyDesignEnabled);
+	};
+
 	panel.context.ready
 		.then(() => {
-			connectNotebookHooks(isPluginEnabled);
-			syncNotebookAppearance(panel, isPluginEnabled);
-			applyPanelState(panel, isPluginEnabled);
+			bindNotebookHooks(isPluginEnabled, isReadonlyDesignEnabled);
+			syncNotebookView(panel, isPluginEnabled, isReadonlyDesignEnabled);
+			syncPanelCells(panel, isPluginEnabled, isReadonlyDesignEnabled);
 		})
 		.catch(() => {
 			// Ignore startup race errors and allow notebook to continue.
 		});
+}
+
+/**
+ * Force-refresh execution-guard appearance for a previously wired notebook panel.
+ */
+export function refreshExecutionGuard(panel: NotebookPanel): void {
+	const fn = (panel as any).__vreRefreshExecutionGuard;
+	if (typeof fn === 'function') {
+		fn();
+	}
 }

@@ -1,11 +1,14 @@
-export interface IFreezeSnapshot {
+/** Cell data used to infer execution state. */
+export interface Snapshot {
 	executionCount: unknown;
 	outputs: unknown[];
 }
 
+/** Execution status persisted in notebook metadata. */
 export type ExecutionStatus = 'success' | 'error' | 'cancelled' | 'unknown' | 'blocked';
 
-export interface IExecutionState {
+/** Serializable notebook metadata for execution tracking. */
+export interface ExecutionState {
 	status: ExecutionStatus;
 	success: boolean;
 	executionCount: number | null;
@@ -20,17 +23,13 @@ interface IOutputLike {
 	type?: string;
 }
 
-/**
- * Normalize a kernel execution count to a finite number or null.
- */
-export function normalizeExecutionCount(value: unknown): number | null {
+/** Normalize a kernel execution count to a finite number or null. */
+export function normalizeCount(value: unknown): number | null {
 	return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
-/**
- * Return true when any output entry represents an error output.
- */
-export function hasErrorOutputItems(outputs: readonly unknown[]): boolean {
+/** Return true when any output entry represents an error output. */
+export function hasErrorOutputs(outputs: readonly unknown[]): boolean {
 	for (const item of outputs) {
 		const candidate = item as IOutputLike;
 		const outputType = candidate?.output_type ?? candidate?.type;
@@ -41,64 +40,49 @@ export function hasErrorOutputItems(outputs: readonly unknown[]): boolean {
 	return false;
 }
 
-/**
- * Return true when a snapshot should be treated as a successful execution.
- */
-export function hasSuccessfulExecutionSnapshot(snapshot: IFreezeSnapshot): boolean {
-	if (hasErrorOutputItems(snapshot.outputs)) {
+/** Return true when a snapshot should be treated as a successful execution. */
+export function isSuccessfulSnapshot(snapshot: Snapshot): boolean {
+	if (hasErrorOutputs(snapshot.outputs)) {
 		return false;
 	}
-	return normalizeExecutionCount(snapshot.executionCount) !== null || snapshot.outputs.length > 0;
+	return normalizeCount(snapshot.executionCount) !== null || snapshot.outputs.length > 0;
 }
 
-/**
- * Derive an execution status from a snapshot.
- */
-export function executionStatusFromSnapshot(snapshot: IFreezeSnapshot): ExecutionStatus {
-	if (hasErrorOutputItems(snapshot.outputs)) {
+/** Derive an execution status from a snapshot. */
+export function getStatus(snapshot: Snapshot): ExecutionStatus {
+	if (hasErrorOutputs(snapshot.outputs)) {
 		return 'error';
 	}
-	if (hasSuccessfulExecutionSnapshot(snapshot)) {
+	if (isSuccessfulSnapshot(snapshot)) {
 		return 'success';
 	}
 	return 'unknown';
 }
 
-/**
- * Return true when a cell is already frozen as executed.
- */
-export function isAlreadyExecutedSnapshot(
-	metadataValue: unknown,
-	stateValue?: unknown,
-): boolean {
+/** Return true when a cell is already frozen as executed. */
+export function isExecutedSnapshot(metadataValue: unknown, stateValue?: unknown): boolean {
 	if (metadataValue === true) {
 		return true;
 	}
-	const state = stateValue as Partial<IExecutionState> | undefined;
+	const state = stateValue as Partial<ExecutionState> | undefined;
 	return state?.success === true;
 }
 
-/**
- * Safely parse the extension execution state metadata payload.
- */
-export function parseExecutionState(value: unknown): Partial<IExecutionState> | undefined {
+/** Safely parse the extension execution state metadata payload. */
+export function parseState(value: unknown): Partial<ExecutionState> | undefined {
 	if (!value || typeof value !== 'object') {
 		return undefined;
 	}
-	return value as Partial<IExecutionState>;
+	return value as Partial<ExecutionState>;
 }
 
-/**
- * Create a serializable metadata record for a single execution attempt.
- */
-export function buildExecutionState(
-	snapshot: IFreezeSnapshot,
+/** Create a serializable metadata record for a single execution attempt. */
+export function buildState(
+	snapshot: Snapshot,
 	status: ExecutionStatus,
-	previousState?: Partial<IExecutionState>,
-): IExecutionState {
-	const priorAttempts = Number.isFinite(previousState?.attempts)
-		? Number(previousState?.attempts)
-		: 0;
+	previousState?: Partial<ExecutionState>,
+): ExecutionState {
+	const priorAttempts = Number.isFinite(previousState?.attempts) ? Number(previousState?.attempts) : 0;
 	const priorBlockedCount = Number.isFinite(previousState?.blockedCount)
 		? Number(previousState?.blockedCount)
 		: 0;
@@ -108,7 +92,7 @@ export function buildExecutionState(
 	return {
 		status,
 		success: status === 'success',
-		executionCount: normalizeExecutionCount(snapshot.executionCount),
+		executionCount: normalizeCount(snapshot.executionCount),
 		outputCount: snapshot.outputs.length,
 		attempts,
 		blockedCount,

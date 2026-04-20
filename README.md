@@ -16,6 +16,16 @@
 This extension provides JupyterLab plugin settings via [schema/plugin.json](schema/plugin.json):
 
 - `enabled` (default `true`): enables MIME synchronization and execution guard behavior.
+- `cellReadonlyDesignEnabled` (default `true`): controls executed-cell readonly lock and visual treatment.
+
+## Commands
+
+Open the Command Palette and run:
+
+- `VRE: Toggle Cell Readonly Design`
+- `VRE: Toggle Extension`
+
+All toggles apply immediately and persist through refresh/restart via JupyterLab settings.
 
 ## Development
 
