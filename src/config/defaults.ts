@@ -1,4 +1,4 @@
-import type { IVreLanguageOptions } from '../language/vre-language';
+import type { IVreLanguageOptions } from '../language/vre-language-options';
 
 export const DEFAULT_LANGUAGE_OPTIONS: IVreLanguageOptions = {
 	// Domain-specific keywords (control flow, operations)
@@ -18,6 +18,12 @@ export const DEFAULT_LANGUAGE_OPTIONS: IVreLanguageOptions = {
 		'lineplot',
 		'on',
 		'for',
+		'task',
+		'collinear',
+		'normal',
+		'structure',
+		'many_to_one',
+		'composition',
 	],
 	// Built-in functions available in the language
 	builtins: [
@@ -69,6 +75,8 @@ export const DEFAULT_LANGUAGE_OPTIONS: IVreLanguageOptions = {
 		'Species',
 		'Reaction',
 	],
+	// Post-colon property names used in the DSL
+	specialProperties: ['array', 'columns'],
 	// Unit keywords
 	units: ['K', 'eV'],
 };
