@@ -99,3 +99,11 @@ export function buildState(
 		updatedAt: new Date().toISOString(),
 	};
 }
+
+// Backward-compatible API names used by tests and older call sites.
+export const normalizeExecutionCount = normalizeCount;
+export const hasErrorOutputItems = hasErrorOutputs;
+export const hasSuccessfulExecutionSnapshot = isSuccessfulSnapshot;
+export const isAlreadyExecutedSnapshot = isExecutedSnapshot;
+export const parseExecutionState = parseState;
+export const buildExecutionState = buildState;
