@@ -11,6 +11,27 @@ import {
 } from './freeze-state';
 
 let hooksConnected = false;
+let actionGuardsConnected = false;
+
+type ReadonlySwitch = () => boolean;
+
+interface INotebookLike {
+	activeCell?: Cell | null;
+}
+
+/**
+ * Read the active code cell from NotebookActions arguments.
+ */
+function readActiveCell(args: unknown[]): Cell | null {
+	for (const arg of args) {
+		const notebook = arg as INotebookLike;
+		const cell = notebook?.activeCell;
+		if (cell && cell.model?.type === 'code') {
+			return cell;
+		}
+	}
+	return null;
+}
 
 /**
  * Read the notebook model execution count for a cell.
@@ -138,6 +159,24 @@ async function notifyBlockedExecution(): Promise<void> {
 	});
 }
 
+/**
+ * Return true after blocking a rerun request for an already executed cell.
+ */
+async function blockExecutedCellRun(
+	cell: Cell,
+	isPluginEnabled: ReadonlySwitch,
+	isReadonlyDesignEnabled: ReadonlySwitch,
+): Promise<boolean> {
+	if (!isPluginEnabled() || !shouldGuardCell(cell) || !isExecuted(cell)) {
+		return false;
+	}
+
+	setExecutionState(cell, 'blocked');
+	setReadonlyAppearance(cell, isReadonlyDesignEnabled());
+	await notifyBlockedExecution();
+	return true;
+}
+
 function shouldGuardCell(cell: Cell): boolean {
 	return cell.model.type === 'code';
 }
@@ -242,6 +281,46 @@ function bindNotebookHooks(
 }
 
 /**
+ * Intercept NotebookActions run APIs so reruns are rejected before scheduling.
+ */
+function bindActionGuards(
+	isPluginEnabled: () => boolean,
+	isReadonlyDesignEnabled: () => boolean,
+): void {
+	if (actionGuardsConnected) {
+		return;
+	}
+	actionGuardsConnected = true;
+
+	const actionNames = ['run', 'runAndAdvance', 'runAndInsert'];
+	const actions = NotebookActions as any;
+
+	for (const name of actionNames) {
+		const original = actions[name];
+		if (typeof original !== 'function') {
+			continue;
+		}
+		if ((original as any).__vreGuardWrapped === true) {
+			continue;
+		}
+
+		const wrapped = async (...args: unknown[]) => {
+			const cell = readActiveCell(args);
+			if (
+				cell &&
+				(await blockExecutedCellRun(cell, isPluginEnabled, isReadonlyDesignEnabled))
+			) {
+				return false;
+			}
+			return original.apply(actions, args);
+		};
+
+		(wrapped as any).__vreGuardWrapped = true;
+		actions[name] = wrapped;
+	}
+}
+
+/**
  * Keep all guarded cells in a notebook visually up to date.
  */
 function syncNotebookView(
@@ -299,6 +378,7 @@ export function activateExecutionGuard(
 
 	panel.context.ready
 		.then(() => {
+			bindActionGuards(isPluginEnabled, isReadonlyDesignEnabled);
 			bindNotebookHooks(isPluginEnabled, isReadonlyDesignEnabled);
 			syncNotebookView(panel, isPluginEnabled, isReadonlyDesignEnabled);
 			syncPanelCells(panel, isPluginEnabled, isReadonlyDesignEnabled);
