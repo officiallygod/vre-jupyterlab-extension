@@ -141,6 +141,15 @@ function setReadonlyAppearance(cell: Cell, executed: boolean): void {
 	setClass(inputEditorHost, EXECUTION.executedInputClass, executed);
 	setClass(cmEditorHost, EXECUTION.executedEditorClass, executed);
 
+	// CodeMirror editor nodes may mount after first paint on reload. Re-apply
+	// classes on the next frame so executed styling is not missed.
+	if (executed && !cmEditorHost) {
+		requestAnimationFrame(() => {
+			const delayedCmEditorHost = cell.node.querySelector('.cm-editor') as HTMLElement | null;
+			setClass(delayedCmEditorHost, EXECUTION.executedEditorClass, true);
+		});
+	}
+
 	if (executed) {
 		cell.addClass(EXECUTION.executedCellClass);
 		return;
@@ -329,9 +338,20 @@ function syncNotebookView(
 	isReadonlyDesignEnabled: () => boolean,
 ): void {
 	const notebook = panel.content;
+	let refreshPending = false;
 	const refresh = () => {
 		notebook.widgets.forEach((cell) => {
 			syncCellState(cell, isPluginEnabled, isReadonlyDesignEnabled);
+		});
+	};
+	const scheduleRefresh = () => {
+		if (refreshPending) {
+			return;
+		}
+		refreshPending = true;
+		requestAnimationFrame(() => {
+			refreshPending = false;
+			refresh();
 		});
 	};
 
@@ -344,6 +364,19 @@ function syncNotebookView(
 	});
 	panel.sessionContext.statusChanged.connect(() => {
 		refresh();
+	});
+
+	// Some editors are attached/replaced after notebook restore. Observe DOM
+	// child changes and resync guarded classes for executed cells.
+	const observer = new MutationObserver(() => {
+		scheduleRefresh();
+	});
+	observer.observe(notebook.node, {
+		childList: true,
+		subtree: true,
+	});
+	panel.disposed.connect(() => {
+		observer.disconnect();
 	});
 }
 
