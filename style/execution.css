@@ -4,11 +4,7 @@
 }
 
 .jp-Notebook .jp-InputArea-editor.vre-jupyterlab-extension__input-editor--executed {
-  background-color: rgba(118, 118, 118, 0.26) !important;
-  border: 1px solid rgba(92, 92, 92, 0.58);
-  border-radius: 2px;
-}
-
-.jp-Notebook .cm-editor.vre-jupyterlab-extension__cm-editor--executed {
-  background-color: rgba(118, 118, 118, 0.26) !important;
+  background-color: rgba(118, 118, 118, 0.50) !important;
+  border: 1px solid rgba(92, 92, 92, 0.80);
+  border-radius: 1px;
 }
