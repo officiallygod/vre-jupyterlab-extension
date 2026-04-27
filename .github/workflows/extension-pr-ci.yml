@@ -1,0 +1,121 @@
+name: Extension PR CI
+
+on:
+  pull_request:
+    paths:
+      - '**'
+      - '.github/workflows/extension-pr-ci.yml'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  extension-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Extension
+        id: build
+        continue-on-error: true
+        run: npm run build
+
+      - name: Run Tests
+        id: tests
+        if: always()
+        run: npm test 2>&1 | tee tests/test-results.tap
+
+      - name: Publish PR Summary and Comment
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        with:
+          script: |
+            const fs = require('node:fs');
+            const tapPath = 'tests/test-results.tap';
+            const marker = '<!-- vre-extension-ci-summary -->';
+            const tap = fs.existsSync(tapPath) ? fs.readFileSync(tapPath, 'utf8') : '';
+            const lines = tap.split(/\r?\n/);
+            const passed = [];
+            const failed = [];
+
+            for (const line of lines) {
+              if (line.startsWith('ok ')) {
+                passed.push(line.replace(/^ok\s+\d+\s*-\s*/, '').trim());
+              } else if (line.startsWith('not ok ')) {
+                failed.push(line.replace(/^not ok\s+\d+\s*-\s*/, '').trim());
+              }
+            }
+
+            const summary = [
+              '## Extension CI Summary',
+              '',
+              '| Metric | Value |',
+              '|---|---:|',
+              `| Total tests | ${passed.length + failed.length} |`,
+              `| Passed | ${passed.length} |`,
+              `| Failed | ${failed.length} |`,
+              '',
+            ];
+
+            if (failed.length > 0) {
+              summary.push('### Failed Tests', '');
+              for (const name of failed) {
+                summary.push(`- ${name}`);
+              }
+              summary.push('');
+            }
+
+            const markdown = summary.join('\n');
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${markdown}\n\nDetailed logs and traces are in the workflow artifact.\n`);
+
+            const body = `${marker}\n${markdown}\n\n[Open full logs and stack traces](${process.env.RUN_URL})\n`;
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+
+            const existing = comments.find((comment) =>
+              comment.user.type === 'Bot' && comment.body && comment.body.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
+
+      - name: Upload Extension Test Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-test-artifacts
+          path: tests/test-results.tap
+          if-no-files-found: warn
