@@ -38,15 +38,16 @@ jobs:
         run: which python && python --version
 
       - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install jupyterlab
+        run: python -m pip install --upgrade pip
 
       - name: Build Extension
         id: build
         env:
           PYTHON_BIN: ${{ env.pythonLocation }}/bin/python
-        run: npm run build
+          run: |
+            which python
+            python -m pip install jupyterlab
+            npm run build
 
       - name: Run Tests
         if: always()
