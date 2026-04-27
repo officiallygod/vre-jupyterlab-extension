@@ -34,9 +34,6 @@ jobs:
         with:
           python-version: 3.11
 
-      - name: Set Python env
-        run: echo "PYTHON_BIN=python" >> $GITHUB_ENV
-
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
@@ -44,7 +41,6 @@ jobs:
 
       - name: Build Extension
         id: build
-        continue-on-error: true
         env:
           PYTHON_BIN: python
         run: npm run build
