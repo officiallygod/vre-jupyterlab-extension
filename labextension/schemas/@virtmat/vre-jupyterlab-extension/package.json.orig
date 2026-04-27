@@ -19,7 +19,7 @@
 		"LICENSE"
 	],
 	"scripts": {
-		"build": "npm run clean && tsc -p tsconfig.json && PYTHON_BIN=${PYTHON_BIN:-python} $PYTHON_BIN -m jupyter labextension build .",
+		"build": "npm run clean && tsc -p tsconfig.json && python -m jupyter labextension build .",
 		"clean": "rm -rf lib labextension tsconfig.tsbuildinfo",
 		"test": "npm run test:unit",
 		"test:unit": "tsc -p tsconfig.json && node --test tests/freeze-state.test.mjs tests/config.test.mjs",

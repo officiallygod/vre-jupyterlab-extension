@@ -48,8 +48,7 @@ jobs:
 
       - name: Build Extension
         run: |
-          which python
-          python -m jupyter labextension build .
+          npm run build
 
       - name: Run Tests
         if: always()
