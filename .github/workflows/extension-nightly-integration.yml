@@ -1,0 +1,80 @@
+name: Extension Nightly Integration
+
+on:
+  schedule:
+    - cron: '30 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  nightly-integration:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Nightly Integration Suite
+        run: |
+          npm run build
+          npm test 2>&1 | tee tests/test-results.tap
+
+      - name: Publish Job Summary
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('node:fs');
+            const tapPath = 'tests/test-results.tap';
+            const tap = fs.existsSync(tapPath) ? fs.readFileSync(tapPath, 'utf8') : '';
+            const lines = tap.split(/\r?\n/);
+            const passed = [];
+            const failed = [];
+
+            for (const line of lines) {
+              if (line.startsWith('ok ')) {
+                passed.push(line.replace(/^ok\s+\d+\s*-\s*/, '').trim());
+              } else if (line.startsWith('not ok ')) {
+                failed.push(line.replace(/^not ok\s+\d+\s*-\s*/, '').trim());
+              }
+            }
+
+            const summary = [
+              '## Extension CI Summary',
+              '',
+              '| Metric | Value |',
+              '|---|---:|',
+              `| Total tests | ${passed.length + failed.length} |`,
+              `| Passed | ${passed.length} |`,
+              `| Failed | ${failed.length} |`,
+              '',
+            ];
+
+            if (failed.length > 0) {
+              summary.push('### Failed Tests', '');
+              for (const name of failed) {
+                summary.push(`- ${name}`);
+              }
+              summary.push('');
+            }
+
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${summary.join('\n')}\n\nDetailed logs and traces are in the workflow artifact.\n`);
+
+      - name: Upload Nightly Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-nightly-artifacts
+          path: tests/test-results.tap
+          if-no-files-found: warn
