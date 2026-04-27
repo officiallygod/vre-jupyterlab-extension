@@ -5,12 +5,21 @@ const testsDir = path.resolve('tests');
 const tapPath = path.join(testsDir, 'test-results.tap');
 const outJsonPath = path.join(testsDir, 'ci-summary.json');
 const outMdPath = path.join(testsDir, 'ci-summary.md');
+const coveragePath = path.join(path.resolve('.'), 'coverage', 'coverage-summary.json');
 
 function readText(filePath) {
 	try {
 		return fs.readFileSync(filePath, 'utf8');
 	} catch {
 		return '';
+	}
+}
+
+function readJson(filePath) {
+	try {
+		return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+	} catch {
+		return null;
 	}
 }
 
@@ -42,7 +51,20 @@ function parseTap(content) {
 	};
 }
 
-function buildMarkdown(summary) {
+function extractCoverageSummary(coverageData) {
+	if (!coverageData || !coverageData.total) {
+		return null;
+	}
+	const total = coverageData.total;
+	return {
+		lines: total.lines?.pct || 0,
+		statements: total.statements?.pct || 0,
+		functions: total.functions?.pct || 0,
+		branches: total.branches?.pct || 0,
+	};
+}
+
+function buildMarkdown(summary, coverage) {
 	const lines = [];
 	lines.push('## Extension CI Summary');
 	lines.push('');
@@ -52,6 +74,14 @@ function buildMarkdown(summary) {
 	lines.push(`| Passed | ${summary.passed.length} |`);
 	lines.push(`| Failed | ${summary.failed.length} |`);
 	lines.push(`| Skipped | ${summary.skipped.length} |`);
+	
+	if (coverage) {
+		lines.push(`| Coverage (lines) | ${coverage.lines.toFixed(1)}% |`);
+		lines.push(`| Coverage (statements) | ${coverage.statements.toFixed(1)}% |`);
+		lines.push(`| Coverage (functions) | ${coverage.functions.toFixed(1)}% |`);
+		lines.push(`| Coverage (branches) | ${coverage.branches.toFixed(1)}% |`);
+	}
+	
 	lines.push('');
 
 	if (summary.failed.length > 0) {
@@ -70,9 +100,21 @@ function buildMarkdown(summary) {
 }
 
 const tapSummary = parseTap(readText(tapPath));
+const coverageData = readJson(coveragePath);
+const coverage = extractCoverageSummary(coverageData);
+
+// Add coverage to the JSON summary if available
+const jsonSummary = { ...tapSummary };
+if (coverage) {
+	jsonSummary.coverage = coverage;
+}
+
 fs.mkdirSync(testsDir, { recursive: true });
-fs.writeFileSync(outJsonPath, JSON.stringify(tapSummary, null, 2));
-fs.writeFileSync(outMdPath, `${buildMarkdown(tapSummary)}\n`);
+fs.writeFileSync(outJsonPath, JSON.stringify(jsonSummary, null, 2));
+fs.writeFileSync(outMdPath, `${buildMarkdown(tapSummary, coverage)}\n`);
 
 console.log(`Wrote ${outJsonPath}`);
 console.log(`Wrote ${outMdPath}`);
+if (coverage) {
+	console.log(`Included coverage: lines=${coverage.lines.toFixed(1)}%, statements=${coverage.statements.toFixed(1)}%, functions=${coverage.functions.toFixed(1)}%, branches=${coverage.branches.toFixed(1)}%`);
+}

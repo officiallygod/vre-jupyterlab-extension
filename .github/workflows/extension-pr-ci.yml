@@ -50,55 +50,79 @@ jobs:
         run: |
           npm run build
 
-      - name: Run Tests
+      - name: Run Tests with Coverage
         if: always()
-        run: npm test 2>&1 | tee tests/test-results.tap
+        run: npm run ci:test
+
+      - name: Generate CI Summary
+        if: always()
+        run: npm run ci:summary
 
       - name: Publish Job Summary
         if: always()
+        run: |
+          if [ -f tests/ci-summary.md ]; then
+            cat tests/ci-summary.md >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Comment PR with Results
+        if: always() && github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('node:fs');
-            const tapPath = 'tests/test-results.tap';
-            const tap = fs.existsSync(tapPath) ? fs.readFileSync(tapPath, 'utf8') : '';
-            const lines = tap.split(/\r?\n/);
-            const passed = [];
-            const failed = [];
-
-            for (const line of lines) {
-              if (line.startsWith('ok ')) {
-                passed.push(line.replace(/^ok\s+\d+\s*-\s*/, '').trim());
-              } else if (line.startsWith('not ok ')) {
-                failed.push(line.replace(/^not ok\s+\d+\s*-\s*/, '').trim());
-              }
+            const summaryPath = 'tests/ci-summary.md';
+            
+            if (!fs.existsSync(summaryPath)) {
+              console.log('No summary file found');
+              return;
+            }
+            
+            const summary = fs.readFileSync(summaryPath, 'utf8');
+            
+            // Get existing comments from bot
+            const comments = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            
+            const botComment = comments.data.find(comment => 
+              comment.user.type === 'Bot' && comment.body.includes('Extension CI Summary')
+            );
+            
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                comment_id: botComment.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: summary,
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: summary,
+              });
             }
 
-            const summary = [
-              '## Extension CI Summary',
-              '',
-              '| Metric | Value |',
-              '|---|---:|',
-              `| Total tests | ${passed.length + failed.length} |`,
-              `| Passed | ${passed.length} |`,
-              `| Failed | ${failed.length} |`,
-              '',
-            ];
-
-            if (failed.length > 0) {
-              summary.push('### Failed Tests', '');
-              for (const name of failed) {
-                summary.push(`- ${name}`);
-              }
-              summary.push('');
-            }
-
-            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${summary.join('\n')}\n`);
-
-      - name: Upload Extension Test Artifact
+      - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: extension-pr-ci-artifacts
-          path: tests/test-results.tap
+          name: test-results-node${{ matrix.node-version }}
+          path: |
+            tests/test-results.tap
+            tests/ci-summary.json
+            tests/ci-summary.md
+
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-node${{ matrix.node-version }}
+          path: coverage/
           if-no-files-found: warn
