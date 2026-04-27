@@ -12,6 +12,10 @@ jobs:
   nightly-integration:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        node-version: [24, 25]
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,7 +23,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ matrix.node-version }}
           cache: npm
 
       - name: Install Dependencies
@@ -28,6 +32,8 @@ jobs:
       - name: Build Extension
         id: build
         continue-on-error: true
+        env:
+          PYTHON_BIN: python
         run: npm run build
 
       - name: Run Tests
