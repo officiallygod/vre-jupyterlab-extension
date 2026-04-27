@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: constants expose stable plugin and command IDs
+ok 1 - constants expose stable plugin and command IDs
+  ---
+  duration_ms: 1.538305
+  type: 'test'
+  ...
+# Subtest: language constants are aligned with extension assumptions
+ok 2 - language constants are aligned with extension assumptions
+  ---
+  duration_ms: 0.372331
+  type: 'test'
+  ...
+# Subtest: execution constants use VRE metadata namespace and classes
+ok 3 - execution constants use VRE metadata namespace and classes
+  ---
+  duration_ms: 0.269145
+  type: 'test'
+  ...
+# Subtest: default language options include core DSL entries
+ok 4 - default language options include core DSL entries
+  ---
+  duration_ms: 0.253383
+  type: 'test'
+  ...
+# Subtest: normalizeExecutionCount only accepts finite numbers
+ok 5 - normalizeExecutionCount only accepts finite numbers
+  ---
+  duration_ms: 1.609005
+  type: 'test'
+  ...
+# Subtest: hasErrorOutputItems detects notebook error outputs
+ok 6 - hasErrorOutputItems detects notebook error outputs
+  ---
+  duration_ms: 0.376063
+  type: 'test'
+  ...
+# Subtest: hasSuccessfulExecutionSnapshot matches freeze semantics
+ok 7 - hasSuccessfulExecutionSnapshot matches freeze semantics
+  ---
+  duration_ms: 0.398827
+  type: 'test'
+  ...
+# Subtest: isAlreadyExecutedSnapshot respects metadata override
+ok 8 - isAlreadyExecutedSnapshot respects metadata override
+  ---
+  duration_ms: 0.342603
+  type: 'test'
+  ...
+# Subtest: buildExecutionState creates stable metadata payload
+ok 9 - buildExecutionState creates stable metadata payload
+  ---
+  duration_ms: 0.814216
+  type: 'test'
+  ...
+# Subtest: buildExecutionState increments counters with prior state
+ok 10 - buildExecutionState increments counters with prior state
+  ---
+  duration_ms: 0.391658
+  type: 'test'
+  ...
+# Subtest: parseExecutionState returns undefined for non-object values
+ok 11 - parseExecutionState returns undefined for non-object values
+  ---
+  duration_ms: 1.647973
+  type: 'test'
+  ...
+# Subtest: getStatus maps snapshot states consistently
+ok 12 - getStatus maps snapshot states consistently
+  ---
+  duration_ms: 0.46271
+  type: 'test'
+  ...
+# Subtest: backward-compatible aliases stay aligned with canonical exports
+ok 13 - backward-compatible aliases stay aligned with canonical exports
+  ---
+  duration_ms: 0.481898
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 130.430116
