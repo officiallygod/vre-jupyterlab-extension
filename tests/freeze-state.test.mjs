@@ -3,10 +3,17 @@ import assert from 'node:assert/strict';
 
 import {
 	buildExecutionState,
+	buildState,
+	getStatus,
 	hasErrorOutputItems,
+	hasErrorOutputs,
 	hasSuccessfulExecutionSnapshot,
+	isSuccessfulSnapshot,
+	isExecutedSnapshot,
 	isAlreadyExecutedSnapshot,
+	normalizeCount,
 	normalizeExecutionCount,
+	parseState,
 	parseExecutionState,
 } from '../lib/execution/freeze-state.js';
 
@@ -90,4 +97,26 @@ test('parseExecutionState returns undefined for non-object values', () => {
 	assert.equal(parseExecutionState(null), undefined);
 	assert.equal(parseExecutionState('state'), undefined);
 	assert.deepEqual(parseExecutionState({ attempts: 1 }), { attempts: 1 });
+});
+
+test('getStatus maps snapshot states consistently', () => {
+	assert.equal(getStatus({ executionCount: 2, outputs: [] }), 'success');
+	assert.equal(
+		getStatus({ executionCount: null, outputs: [{ output_type: 'stream' }] }),
+		'success',
+	);
+	assert.equal(
+		getStatus({ executionCount: null, outputs: [{ output_type: 'error' }] }),
+		'error',
+	);
+	assert.equal(getStatus({ executionCount: null, outputs: [] }), 'unknown');
+});
+
+test('backward-compatible aliases stay aligned with canonical exports', () => {
+	assert.equal(normalizeExecutionCount, normalizeCount);
+	assert.equal(hasErrorOutputItems, hasErrorOutputs);
+	assert.equal(hasSuccessfulExecutionSnapshot, isSuccessfulSnapshot);
+	assert.equal(isAlreadyExecutedSnapshot, isExecutedSnapshot);
+	assert.equal(parseExecutionState, parseState);
+	assert.equal(buildExecutionState, buildState);
 });
