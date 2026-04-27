@@ -1,4 +1,4 @@
-name: Extension PR CI
+name: VRE JupyterLab Extension Test Suite
 
 on:
   pull_request:

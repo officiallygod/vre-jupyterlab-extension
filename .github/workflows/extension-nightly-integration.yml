@@ -46,8 +46,7 @@ jobs:
 
       - name: Build Extension
         run: |
-          echo "Using Python: $(which python)"
-          python -m jupyter labextension build .
+          npm run build
 
       - name: Run Tests
         if: always()
