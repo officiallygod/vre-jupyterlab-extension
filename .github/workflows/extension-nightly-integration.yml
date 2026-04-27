@@ -37,6 +37,11 @@ jobs:
       - name: Verify Python
         run: which python && python --version
 
+      - name: Use correct Python from setup-python
+        run: |
+          echo "$(which python)"
+          python --version
+
       - name: Install Python dependencies
         run: python -m pip install --upgrade pip
 
