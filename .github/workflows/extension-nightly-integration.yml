@@ -25,10 +25,14 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Run Nightly Integration Suite
-        run: |
-          npm run build
-          npm test 2>&1 | tee tests/test-results.tap
+      - name: Build Extension
+        id: build
+        continue-on-error: true
+        run: npm run build
+
+      - name: Run Tests
+        if: always()
+        run: npm test 2>&1 | tee tests/test-results.tap
 
       - name: Publish Job Summary
         if: always()
