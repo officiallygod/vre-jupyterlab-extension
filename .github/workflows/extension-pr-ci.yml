@@ -50,7 +50,7 @@ jobs:
         run: |
           npm run build
 
-      - name: Run Tests with Coverage
+      - name: Run Basic Tests
         if: always()
         run: npm run ci:test
 
@@ -88,7 +88,7 @@ jobs:
             });
             
             const botComment = comments.data.find(comment => 
-              comment.user.type === 'Bot' && comment.body.includes('Extension CI Summary')
+              comment.user.type === 'Bot' && comment.body.includes('Extension Test Result')
             );
             
             if (botComment) {
@@ -118,11 +118,3 @@ jobs:
             tests/test-results.tap
             tests/ci-summary.json
             tests/ci-summary.md
-
-      - name: Upload Coverage Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report-node${{ matrix.node-version }}
-          path: coverage/
-          if-no-files-found: warn
