@@ -34,6 +34,57 @@ All toggles apply immediately and persist through refresh/restart via JupyterLab
 - Build package and bundled labextension assets: `npm run -w @virtmat/vre-jupyterlab-extension build`
 - Run tests: `npm run -w @virtmat/vre-jupyterlab-extension test`
 
+## Python Packaging And Installation
+
+This extension is packaged as a prebuilt JupyterLab extension so it can be installed through Python dependencies.
+
+### Build local wheel/sdist
+
+From the package root (`packages/vre-jupyterlab-extension`):
+
+- `npm ci`
+- `npm run build`
+- `python -m pip install --upgrade build`
+- `python -m build --wheel --sdist`
+
+### Install via pip
+
+- `pip install vre-jupyterlab-extension==0.1.0`
+
+### Add to requirements.txt
+
+Once published, add one of these lines in `requirements.txt` for `vre-language` or `vre-middleware`.
+
+- PyPI release: `vre-jupyterlab-extension==0.1.0`
+- GitHub tag build: `vre-jupyterlab-extension @ git+https://github.com/<org>/<repo>.git@vre-jupyterlab-extension-v0.1.0#subdirectory=packages/vre-jupyterlab-extension`
+- GitLab tag build: `vre-jupyterlab-extension @ git+https://gitlab.com/<group>/<repo>.git@vre-jupyterlab-extension-v0.1.0#subdirectory=packages/vre-jupyterlab-extension`
+
+Install dependencies as usual and the extension package is pulled in automatically.
+
+## Release Automation
+
+### GitHub
+
+- Workflow file: `.github/workflows/extension-publish.yml`
+- Trigger: push a tag (`vre-jupyterlab-extension-vX.Y.Z` or `vX.Y.Z`) or run manually.
+- Required secrets:
+	- `PYPI_API_TOKEN` for publishing to PyPI.
+	- `GITHUB_PACKAGES_TOKEN` for publishing to GitHub Packages.
+
+### GitLab
+
+- CI file: `.gitlab-ci.yml`
+- Trigger: tag pipeline.
+- Publishes to GitLab Package Registry using `CI_JOB_TOKEN`.
+
+## Versioning And Updates
+
+- Keep Python package version (`setup.cfg`) and npm package version (`package.json`) aligned.
+- For downstream repos (`vre-language`, `vre-middleware`), pin exact versions in `requirements.txt`.
+- To automate dependency bumps in downstream repos, enable Dependabot or Renovate for `requirements.txt`.
+
+Note: JupyterLab does not auto-upgrade Python packages by itself. Upgrades are applied when your environment runs `pip install -U ...` or recreates the environment from updated lock/requirements files.
+
 ## CI Commands
 
 - PR pipeline entrypoint: `npm run -w @virtmat/vre-jupyterlab-extension ci`

@@ -1,0 +1,5 @@
+{
+  "packageManager": "python",
+  "packageName": "vre-jupyterlab-extension",
+  "uninstallInstructions": "Use `pip uninstall vre-jupyterlab-extension` to remove this extension package."
+}

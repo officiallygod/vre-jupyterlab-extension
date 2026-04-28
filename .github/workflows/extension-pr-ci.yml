@@ -5,6 +5,13 @@ on:
     paths:
       - '**'
       - '.github/workflows/extension-pr-ci.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - '**'
+      - '.github/workflows/extension-pr-ci.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
