@@ -34,9 +34,6 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Audit Fix Dependencies
-        run: npm audit fix
-
       - name: Setup Python
         uses: actions/setup-python@v5.1.0
         with:
