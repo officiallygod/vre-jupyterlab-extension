@@ -1,4 +1,5 @@
 # VRE JupyterLab Extension
+[![Extension PR CI](https://github.com/officiallygod/vre-jupyterlab-extension/actions/workflows/extension-pr-ci.yml/badge.svg?branch=main)](https://github.com/officiallygod/vre-jupyterlab-extension/actions/workflows/extension-pr-ci.yml)
 
 `@virtmat/vre-jupyterlab-extension` is a frontend-only JupyterLab 4 extension providing:
 
