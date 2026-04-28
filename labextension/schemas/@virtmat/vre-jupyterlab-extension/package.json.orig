@@ -19,12 +19,22 @@
 		"LICENSE"
 	],
 	"scripts": {
-		"build": "npm run clean && tsc -p tsconfig.json && PATH=../../vre/bin:$PATH ../../vre/bin/python -m jupyter labextension build .",
+		"build": "npm run clean && tsc -p tsconfig.json && python -m jupyter labextension build .",
 		"clean": "rm -rf lib labextension tsconfig.tsbuildinfo",
-		"test": "npm run test:freeze",
-		"test:freeze": "tsc -p tsconfig.json && node --test tests/freeze-state.test.mjs",
+		"test": "npm run test:unit",
+		"test:unit": "tsc -p tsconfig.json && node --test tests/freeze-state.test.mjs tests/config.test.mjs",
+		"test:freeze": "npm run test:unit",
+		"test:integration:smoke": "tsc -p tsconfig.json && NODE_OPTIONS=--experimental-specifier-resolution=node node --test tests/integration-smoke.test.mjs",
+		"test:integration:full": "npm run test:integration:smoke",
+		"ci:build": "npm run build",
+		"ci:test:unit": "tsc -p tsconfig.json && bash -o pipefail -c \"node --test --test-reporter=tap tests/freeze-state.test.mjs tests/config.test.mjs | tee tests/test-results.tap\"",
+		"ci:test:integration:smoke": "npm run test:integration:smoke",
+		"ci:test:integration:full": "npm run test:integration:full",
+		"ci:test": "npm run ci:test:unit && npm run ci:test:integration:smoke",
+		"ci:summary": "node tests/ci-summary.mjs",
+		"ci": "npm run ci:build && npm run ci:test",
 		"watch": "tsc -w -p tsconfig.json",
-		"lab:develop": "PATH=../../vre/bin:$PATH ../../vre/bin/python -m jupyter labextension link ."
+		"lab:develop": "PYTHON_BIN=${PYTHON_BIN:-python} $PYTHON_BIN -m jupyter labextension link ."
 	},
 	"keywords": [
 		"jupyterlab-extension",

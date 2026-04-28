@@ -1,0 +1,26 @@
+{
+  "passed": [
+    "constants expose stable plugin and command IDs",
+    "language constants are aligned with extension assumptions",
+    "execution constants use VRE metadata namespace and classes",
+    "default language options include core DSL entries",
+    "normalizeExecutionCount only accepts finite numbers",
+    "hasErrorOutputItems detects notebook error outputs",
+    "hasSuccessfulExecutionSnapshot matches freeze semantics",
+    "isAlreadyExecutedSnapshot respects metadata override",
+    "buildExecutionState creates stable metadata payload",
+    "buildExecutionState increments counters with prior state",
+    "parseExecutionState returns undefined for non-object values",
+    "getStatus maps snapshot states consistently",
+    "backward-compatible aliases stay aligned with canonical exports"
+  ],
+  "failed": [],
+  "skipped": [],
+  "total": 13,
+  "coverage": {
+    "lines": 100,
+    "statements": 100,
+    "functions": 100,
+    "branches": 100
+  }
+}

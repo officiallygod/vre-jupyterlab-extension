@@ -32,6 +32,18 @@ All toggles apply immediately and persist through refresh/restart via JupyterLab
 
 - Install workspace dependencies: `npm install`
 - Build package and bundled labextension assets: `npm run -w @virtmat/vre-jupyterlab-extension build`
-- Watch TypeScript: `npm run -w @virtmat/vre-jupyterlab-extension watch`
-- Link for local JupyterLab: `npm run -w @virtmat/vre-jupyterlab-extension lab:develop`
 - Run tests: `npm run -w @virtmat/vre-jupyterlab-extension test`
+
+## CI Commands
+
+- PR pipeline entrypoint: `npm run -w @virtmat/vre-jupyterlab-extension ci`
+- Unit tests (TAP output): `npm run -w @virtmat/vre-jupyterlab-extension ci:test:unit`
+- Smoke integration tests (PR): `npm run -w @virtmat/vre-jupyterlab-extension ci:test:integration:smoke`
+- Full integration suite (nightly): `npm run -w @virtmat/vre-jupyterlab-extension ci:test:integration:full`
+- Build PR summary artifacts: `npm run -w @virtmat/vre-jupyterlab-extension ci:summary`
+
+CI summary artifacts are written to `packages/vre-jupyterlab-extension/tests/`:
+
+- `test-results.tap`
+- `ci-summary.json`
+- `ci-summary.md`
