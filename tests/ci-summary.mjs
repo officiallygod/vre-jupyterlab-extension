@@ -47,7 +47,7 @@ function buildMarkdown(summary) {
 	const statusLine = summary.failed.length === 0
 		? '**Status:** PASS'
 		: '**Status:** FAIL';
-	lines.push('## Extension Test Result');
+	lines.push('## VRE JupyterLab Extension Test Suite Summary');
 	lines.push('');
 	lines.push(statusLine);
 	lines.push('');
