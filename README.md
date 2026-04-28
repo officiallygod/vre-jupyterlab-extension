@@ -31,8 +31,6 @@ All toggles apply immediately and persist through refresh/restart via JupyterLab
 
 - Install workspace dependencies: `npm install`
 - Build package and bundled labextension assets: `npm run -w @virtmat/vre-jupyterlab-extension build`
-- Watch TypeScript: `npm run -w @virtmat/vre-jupyterlab-extension watch`
-- Link for local JupyterLab: `npm run -w @virtmat/vre-jupyterlab-extension lab:develop`
 - Run tests: `npm run -w @virtmat/vre-jupyterlab-extension test`
 
 ## CI Commands
