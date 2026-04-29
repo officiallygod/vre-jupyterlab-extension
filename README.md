@@ -69,7 +69,7 @@ Install dependencies as usual and the extension package is pulled in automatical
 - Trigger: push a tag (`vre-jupyterlab-extension-vX.Y.Z` or `vX.Y.Z`) or run manually.
 - Required secrets:
 	- `PYPI_API_TOKEN` for publishing to PyPI.
-	- `GITHUB_PACKAGES_TOKEN` for publishing to GitHub Packages.
+	- `THE_GITHUB_PACKAGES_TOKEN` for publishing to GitHub Packages.
 
 ### GitLab
 
