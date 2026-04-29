@@ -1,0 +1,119 @@
+name: Extension Publish
+
+on:
+  push:
+    tags:
+      - 'vre-jupyterlab-extension-v*'
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-dist:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [24]
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4.1.0
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Setup Python
+        uses: actions/setup-python@v5.1.0
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install Build Tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install 'jupyterlab>=4.2,<5' build twine
+
+      - name: Install JS Dependencies
+        run: npm ci
+
+      - name: Build JupyterLab Extension Assets
+        run: npm run build
+
+      - name: Verify Python
+        run: |
+          which python
+          python --version
+
+      - name: Build Python Distribution
+        run: python -m build
+
+      - name: Check Distribution
+        run: twine check dist/*
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4.4.0
+        with:
+          name: vre-jupyterlab-extension-dist
+          path: dist/*
+
+  # publish-pypi:
+  #   needs: build-dist
+  #   runs-on: ubuntu-latest
+  #   if: startsWith(github.ref, 'refs/tags/') && secrets.PYPI_API_TOKEN != ''
+  #   permissions:
+  #     id-token: write
+
+  #   steps:
+  #     - name: Download Build Artifacts
+  #       uses: actions/download-artifact@v4.1.8
+  #       with:
+  #         name: vre-jupyterlab-extension-dist
+  #         path: dist
+
+  #     - name: Publish To PyPI
+  #       uses: pypa/gh-action-pypi-publish@release/v1
+  #       with:
+  #         packages-dir: dist
+  #         password: ${{ secrets.PYPI_API_TOKEN }}
+
+  publish-github-packages:
+    needs: build-dist
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v5.1.0
+        with:
+          python-version: '3.12'
+
+      - name: Install Twine
+        run: python -m pip install --upgrade pip twine
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4.1.8
+        with:
+          name: vre-jupyterlab-extension-dist
+          path: dist
+
+      - name: Publish To GitHub Packages
+        env:
+          THE_GITHUB_PACKAGES_TOKEN: ${{ secrets.THE_GITHUB_PACKAGES_TOKEN }}
+        run: |
+          twine upload \
+            --non-interactive \
+            --repository-url https://upload.pypi.pkg.github.com/${{ github.repository_owner }}/ \
+            --username __token__ \
+            --password "${THE_GITHUB_PACKAGES_TOKEN}" \
+            dist/*
