@@ -36,7 +36,7 @@ All toggles apply immediately and persist through refresh/restart via JupyterLab
 
 ## Python Packaging And Installation
 
-This extension is packaged as a prebuilt JupyterLab extension so it can be installed through Python dependencies.
+This extension is packaged as a prebuilt JupyterLab extension so end users can install it directly from PyPI with `pip install vre-jupyterlab-extension` and use it immediately, without any Node or JupyterLab extension setup.
 
 ### Build local wheel/sdist
 
