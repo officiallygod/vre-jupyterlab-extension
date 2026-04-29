@@ -38,7 +38,7 @@ jobs:
           git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" "${{ github.event.inputs.release_tag }}"
 
   build-dist:
-    if: !(github.event_name == 'workflow_dispatch' && github.event.inputs.release_tag != '')
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_tag != '' }}
     runs-on: ubuntu-latest
 
     strategy:
