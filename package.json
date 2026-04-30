@@ -1,6 +1,6 @@
 {
 	"name": "@virtmat/vre-jupyterlab-extension",
-	"version": "0.1.0",
+	"version": "0.1.2",
 	"description": "VRE JupyterLab Extension with VRE DSL highlighting and notebook execution guard.",
 	"license": "BSD-3-Clause",
 	"type": "module",
