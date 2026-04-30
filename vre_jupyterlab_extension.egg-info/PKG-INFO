@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: vre-jupyterlab-extension
-Version: 0.1.1
+Version: 0.1.2
 Summary: VRE JupyterLab Extension with VRE DSL highlighting and notebook execution guard
 Home-page: https://github.com/officiallygod/vre-jupyterlab-extension
 Author: VRE Team
