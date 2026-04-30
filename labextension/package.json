@@ -1,6 +1,6 @@
 {
   "name": "@virtmat/vre-jupyterlab-extension",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "VRE JupyterLab Extension with VRE DSL highlighting and notebook execution guard.",
   "license": "BSD-3-Clause",
   "type": "module",
@@ -21,7 +21,7 @@
   "scripts": {
     "build": "npm run clean && tsc -p tsconfig.json && ${PYTHON:-python3} -m jupyter labextension build .",
     "build:dist": "npm run build && ${PYTHON:-python3} -m build",
-    "clean": "rm -rf lib labextension tsconfig.tsbuildinfo",
+    "clean": "rm -rf lib labextension tsconfig.tsbuildinfo dist build *.egg-info",
     "test": "npm run test:unit",
     "test:unit": "tsc -p tsconfig.json && node --test tests/freeze-state.test.mjs tests/config.test.mjs",
     "test:integration:smoke": "tsc -p tsconfig.json && NODE_OPTIONS=--experimental-specifier-resolution=node node --test tests/integration-smoke.test.mjs",
@@ -41,9 +41,9 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://gitlab.kit.edu/kit/virtmat-tools"
+    "url": "https://github.com/officiallygod/vre-jupyterlab-extension"
   },
-  "homepage": "https://gitlab.kit.edu/kit/virtmat-tools",
+  "homepage": "https://github.com/officiallygod/vre-jupyterlab-extension",
   "jupyterlab": {
     "extension": "lib/index.js",
     "outputDir": "labextension",
@@ -65,7 +65,7 @@
       ]
     },
     "_build": {
-      "load": "static/remoteEntry.20841ae1f7571b1baad6.js",
+      "load": "static/remoteEntry.8ff8991a9eadd9dfbd2c.js",
       "extension": "./extension",
       "style": "./style"
     }

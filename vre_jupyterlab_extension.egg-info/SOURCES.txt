@@ -9,8 +9,8 @@ labextension/package.json
 labextension/schemas/@virtmat/vre-jupyterlab-extension/package.json.orig
 labextension/schemas/@virtmat/vre-jupyterlab-extension/plugin.json
 labextension/static/453.7fb2f0e7a5c9bd16bf24.js
-labextension/static/716.88f659b557ac493a9c41.js
-labextension/static/remoteEntry.20841ae1f7571b1baad6.js
+labextension/static/716.e3a9cab1725eddd69fef.js
+labextension/static/remoteEntry.8ff8991a9eadd9dfbd2c.js
 labextension/static/style.js
 labextension/static/third-party-licenses.json
 schema/plugin.json
