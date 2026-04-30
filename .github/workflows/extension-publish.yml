@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Optional: tag to create and push (e.g. vre-jupyterlab-extension-v0.1.2)'
+        description: 'Optional: tag to create and push (e.g. vre-jupyterlab-extension-v0.1.1)'
         required: false
         default: ''
 

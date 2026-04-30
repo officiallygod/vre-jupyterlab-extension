@@ -1,12 +1,12 @@
 Metadata-Version: 2.4
 Name: vre-jupyterlab-extension
-Version: 0.1.0
+Version: 0.1.1
 Summary: VRE JupyterLab Extension with VRE DSL highlighting and notebook execution guard
-Home-page: https://gitlab.kit.edu/kit/virtmat-tools
+Home-page: https://github.com/officiallygod/vre-jupyterlab-extension
 Author: VRE Team
 License: BSD-3-Clause
-Project-URL: Source, https://gitlab.kit.edu/kit/virtmat-tools
-Project-URL: Tracker, https://gitlab.kit.edu/kit/virtmat-tools/-/issues
+Project-URL: Source, https://github.com/officiallygod/vre-jupyterlab-extension
+Project-URL: Tracker, https://github.com/officiallygod/vre-jupyterlab-extension/issues
 Classifier: Development Status :: 3 - Alpha
 Classifier: Framework :: Jupyter
 Classifier: Framework :: Jupyter :: JupyterLab
@@ -76,15 +76,15 @@ From the package root (`packages/vre-jupyterlab-extension`):
 
 ### Install via pip
 
-- `pip install vre-jupyterlab-extension==0.1.0`
+-- `pip install vre-jupyterlab-extension==0.1.1`
 
 ### Add to requirements.txt
 
 Once published, add one of these lines in `requirements.txt` for `vre-language` or `vre-middleware`.
 
-- PyPI release: `vre-jupyterlab-extension==0.1.0`
-- GitHub tag build: `vre-jupyterlab-extension @ git+https://github.com/<org>/<repo>.git@vre-jupyterlab-extension-v0.1.0#subdirectory=packages/vre-jupyterlab-extension`
-- GitLab tag build: `vre-jupyterlab-extension @ git+https://gitlab.com/<group>/<repo>.git@vre-jupyterlab-extension-v0.1.0#subdirectory=packages/vre-jupyterlab-extension`
+-- PyPI release: `vre-jupyterlab-extension==0.1.1`
+-- GitHub tag build: `vre-jupyterlab-extension @ git+https://github.com/<org>/<repo>.git@vre-jupyterlab-extension-v0.1.1#subdirectory=packages/vre-jupyterlab-extension`
+-- GitLab tag build: `vre-jupyterlab-extension @ git+https://gitlab.com/<group>/<repo>.git@vre-jupyterlab-extension-v0.1.1#subdirectory=packages/vre-jupyterlab-extension`
 
 Install dependencies as usual and the extension package is pulled in automatically.
 
