@@ -1,6 +1,6 @@
 {
   "name": "@virtmat/vre-jupyterlab-extension",
-  "version": "0.1.2",
+  "version": "0.1.1",
   "description": "VRE JupyterLab Extension with VRE DSL highlighting and notebook execution guard.",
   "license": "BSD-3-Clause",
   "type": "module",
@@ -65,7 +65,7 @@
       ]
     },
     "_build": {
-      "load": "static/remoteEntry.97481e7e341d5aa8b351.js",
+      "load": "static/remoteEntry.20841ae1f7571b1baad6.js",
       "extension": "./extension",
       "style": "./style"
     }
