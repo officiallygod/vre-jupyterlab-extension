@@ -76,12 +76,12 @@ From the package root (`packages/vre-jupyterlab-extension`):
 
 ### Install via pip
 
--- `pip install vre-jupyterlab-extension==0.1.1`
 
 ### Add to requirements.txt
 
 Once published, add one of these lines in `requirements.txt` for `vre-language` or `vre-middleware`.
 
+-- `pip install vre-jupyterlab-extension==0.1.1`
 -- PyPI release: `vre-jupyterlab-extension==0.1.1`
 -- GitHub tag build: `vre-jupyterlab-extension @ git+https://github.com/<org>/<repo>.git@vre-jupyterlab-extension-v0.1.1#subdirectory=packages/vre-jupyterlab-extension`
 -- GitLab tag build: `vre-jupyterlab-extension @ git+https://gitlab.com/<group>/<repo>.git@vre-jupyterlab-extension-v0.1.1#subdirectory=packages/vre-jupyterlab-extension`
