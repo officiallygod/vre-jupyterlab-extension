@@ -140,7 +140,7 @@ jobs:
         run: |
           twine upload \
             --non-interactive \
-            --repository-url https://pypi.pkg.github.com/${{ github.repository_owner }}/ \
+            --repository-url https://pypi.pkg.github.com/${{ github.repository_owner }}/${{ github.repository }}/ \
             --username __token__ \
             --password "${THE_GITHUB_PACKAGES_TOKEN}" \
             dist/*
