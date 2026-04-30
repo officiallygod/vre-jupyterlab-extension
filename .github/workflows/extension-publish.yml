@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Optional: tag to create and push (e.g. vre-jupyterlab-extension-v0.1.0)'
+        description: 'Optional: tag to create and push (e.g. vre-jupyterlab-extension-v0.1.2)'
         required: false
         default: ''
 
@@ -140,7 +140,7 @@ jobs:
         run: |
           twine upload \
             --non-interactive \
-            --repository-url https://upload.pypi.pkg.github.com/${{ github.repository_owner }}/ \
+            --repository-url https://pypi.pkg.github.com/${{ github.repository_owner }}/ \
             --username __token__ \
             --password "${THE_GITHUB_PACKAGES_TOKEN}" \
             dist/*
