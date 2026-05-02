@@ -1,0 +1,51 @@
+name: Release PR Checklist
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+jobs:
+  apply-release-checklist:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Add checklist to release PR body
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) return;
+
+            const title = (pr.title || '').toLowerCase();
+            const branch = (pr.head?.ref || '').toLowerCase();
+            const labels = (pr.labels || []).map((l) => (l.name || '').toLowerCase());
+            const isReleasePr =
+              title.includes('release') ||
+              branch.startsWith('release/') ||
+              branch.includes('release-') ||
+              labels.includes('release');
+
+            if (!isReleasePr) return;
+
+            const existing = pr.body || '';
+            if (existing.includes('## Release Checklist')) return;
+
+            const checklist = [
+              '## Release Checklist',
+              '- [ ] Bump version in setup.cfg',
+              '- [ ] Bump __version__ in vre_jupyterlab_extension/__init__.py',
+              '- [ ] Bump version in package.json',
+              '- [ ] Run npm ci && npm run ci',
+              '- [ ] Build distributions with python -m build',
+              '- [ ] Tag release (vX.Y.Z) and push tag',
+              '- [ ] Confirm publish workflow succeeded for PyPI and GitHub Packages',
+              ''
+            ].join('\n');
+
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              body: existing ? `${existing}\n\n${checklist}` : checklist
+            });

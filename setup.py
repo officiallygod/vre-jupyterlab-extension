@@ -6,7 +6,6 @@ from pathlib import Path
 from setuptools import setup
 from setuptools.command.build_py import build_py as _build_py
 
-
 ROOT = Path(__file__).parent.resolve()
 
 
@@ -28,5 +27,6 @@ class build_py(_build_py):
                 shutil.copytree(source, destination, dirs_exist_ok=True)
             elif source.exists():
                 shutil.copy2(source, destination)
+
 
 setup(cmdclass={"build_py": build_py})

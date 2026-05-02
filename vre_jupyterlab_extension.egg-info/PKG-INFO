@@ -1,13 +1,15 @@
 Metadata-Version: 2.4
 Name: vre-jupyterlab-extension
-Version: 0.1.1
+Version: 0.1.3
 Summary: VRE JupyterLab Extension with VRE DSL highlighting and notebook execution guard
 Home-page: https://github.com/officiallygod/vre-jupyterlab-extension
 Author: VRE Team
+Maintainer: VRE Team
 License: BSD-3-Clause
 Project-URL: Source, https://github.com/officiallygod/vre-jupyterlab-extension
 Project-URL: Tracker, https://github.com/officiallygod/vre-jupyterlab-extension/issues
-Classifier: Development Status :: 3 - Alpha
+Keywords: jupyterlab,extension,vre,virtmat
+Classifier: Development Status :: 5 - Production/Stable
 Classifier: Framework :: Jupyter
 Classifier: Framework :: Jupyter :: JupyterLab
 Classifier: Framework :: Jupyter :: JupyterLab :: 4
@@ -19,109 +21,90 @@ Classifier: Programming Language :: Python :: 3 :: Only
 Classifier: Programming Language :: Python :: 3.10
 Classifier: Programming Language :: Python :: 3.11
 Classifier: Programming Language :: Python :: 3.12
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: OS Independent
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Software Development :: Libraries :: Application Frameworks
 Requires-Python: >=3.10
 Description-Content-Type: text/markdown
 License-File: LICENSE
 Requires-Dist: jupyterlab<5,>=4.2
 Dynamic: license-file
 
-# VRE JupyterLab Extension
-[![Extension PR CI](https://github.com/officiallygod/vre-jupyterlab-extension/actions/workflows/extension-pr-ci.yml/badge.svg?branch=main)](https://github.com/officiallygod/vre-jupyterlab-extension/actions/workflows/extension-pr-ci.yml)
+# vre-jupyterlab-extension
 
-`@virtmat/vre-jupyterlab-extension` is a frontend-only JupyterLab 4 extension providing:
+[![CI](https://github.com/officiallygod/vre-jupyterlab-extension/actions/workflows/extension-pr-ci.yml/badge.svg)](https://github.com/officiallygod/vre-jupyterlab-extension/actions/workflows/extension-pr-ci.yml)
+[![License](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/vre-jupyterlab-extension.svg)](https://pypi.org/project/vre-jupyterlab-extension)
 
-- CodeMirror 6 syntax highlighting for VRE DSL notebooks and `.vm` files
-- execution guard for declarative workflows (executed-cell visuals + re-execution blocking)
+A prebuilt JupyterLab 4 extension that provides CodeMirror 6 highlighting for the VRE DSL and a simple execution guard.
 
-## Runtime Assumptions
+Why this package
 
-- Linux-only development workflow
-- Jupyter commands are executed through `./vre/bin/python -m jupyter`
-- Intended kernel integration target: `vre-language` with `vre-middleware`
+- No Node tooling required for end users — the wheel embeds the prebuilt labextension assets.
+- Installable via pip and ready to use in a JupyterLab environment.
 
-## Settings
+Quick install
 
-This extension provides JupyterLab plugin settings via [schema/plugin.json](schema/plugin.json):
+```bash
+pip install vre-jupyterlab-extension
+jupyter lab
+```
 
-- `enabled` (default `true`): enables MIME synchronization and execution guard behavior.
-- `cellReadonlyDesignEnabled` (default `true`): controls executed-cell readonly lock and visual treatment.
+Developer / Build from source
 
-## Commands
+```bash
+cd packages/vre-jupyterlab-extension
+npm ci
+npm run build
+python -m pip install --upgrade build
+python -m build --wheel --sdist
+python -m pip install dist/vre_jupyterlab_extension-*.whl
+```
 
-Open the Command Palette and run:
+Release (package-local)
 
-- `VRE: Toggle Cell Readonly Design`
-- `VRE: Toggle Extension`
+You can run the release flow from inside the package directory. The package provides a helper that:
 
-All toggles apply immediately and persist through refresh/restart via JupyterLab settings.
+- prompts for the new semantic version
+- updates `package.json`, `setup.cfg`, and `vre_jupyterlab_extension/__init__.py`
+- removes build artifacts (`dist`, `build`, `lib`, `labextension`, `*.egg-info`, ...)
+- runs `npm ci`, builds frontend assets, and builds a Python wheel and sdist
 
-## Development
+Usage (from repository root):
 
-- Install workspace dependencies: `npm install`
-- Build package and bundled labextension assets: `npm run -w @virtmat/vre-jupyterlab-extension build`
-- Run tests: `npm run -w @virtmat/vre-jupyterlab-extension test`
+```bash
+cd packages/vre-jupyterlab-extension
+npm run release
+# or run directly
+python3 ./scripts/release.py
+```
 
-## Python Packaging And Installation
+Notes:
 
-This extension is packaged as a prebuilt JupyterLab extension so end users can install it directly from PyPI with `pip install vre-jupyterlab-extension` and use it immediately, without any Node or JupyterLab extension setup.
+- The README uses the PyPI badge to show the published version dynamically. Avoid hardcoding the version string in the README so the badge stays authoritative.
+- The package-local `release` script is intentionally self-contained and safe to run from the package folder.
 
-### Build local wheel/sdist
+Release checklist and publish flow
 
-From the package root (`packages/vre-jupyterlab-extension`):
+1. Create a release branch or PR title containing `release` (for example: `release/0.1.4`).
+2. The workflow `.github/workflows/release-pr-checklist.yml` will auto-insert a release checklist into the PR description if missing.
+3. Complete the checklist items before merge.
+4. Merge, create and push a tag like `v0.1.4`.
+5. The publish workflow `.github/workflows/extension-publish.yml` publishes to PyPI and GitHub Packages.
 
-- `npm ci`
-- `npm run build`
-- `python -m pip install --upgrade build`
-- `python -m build --wheel --sdist`
+Runtime requirements
 
-### Install via pip
+- `jupyterlab>=4.2,<5`
 
+Notes
 
-### Add to requirements.txt
+- The wheel includes `labextension/` and `install.json`; `setup.py` copies these assets into the wheel during the build step.
 
-Once published, add one of these lines in `requirements.txt` for `vre-language` or `vre-middleware`.
+Contributing
 
--- `pip install vre-jupyterlab-extension==0.1.1`
--- PyPI release: `vre-jupyterlab-extension==0.1.1`
--- GitHub tag build: `vre-jupyterlab-extension @ git+https://github.com/<org>/<repo>.git@vre-jupyterlab-extension-v0.1.1#subdirectory=packages/vre-jupyterlab-extension`
--- GitLab tag build: `vre-jupyterlab-extension @ git+https://gitlab.com/<group>/<repo>.git@vre-jupyterlab-extension-v0.1.1#subdirectory=packages/vre-jupyterlab-extension`
+Please see the repository CONTRIBUTING guidelines and open issues to discuss changes.
 
-Install dependencies as usual and the extension package is pulled in automatically.
+License
 
-## Release Automation
-
-### GitHub
-
-- Workflow file: `.github/workflows/extension-publish.yml`
-- Trigger: push a tag (`vre-jupyterlab-extension-vX.Y.Z` or `vX.Y.Z`) or run manually.
-- Required secrets:
-	- `PYPI_API_TOKEN` for publishing to PyPI.
-	- `THE_GITHUB_PACKAGES_TOKEN` for publishing to GitHub Packages.
-
-### GitLab
-
-- CI file: `.gitlab-ci.yml`
-- Trigger: tag pipeline.
-- Publishes to GitLab Package Registry using `CI_JOB_TOKEN`.
-
-## Versioning And Updates
-
-- Keep Python package version (`setup.cfg`) and npm package version (`package.json`) aligned.
-- For downstream repos (`vre-language`, `vre-middleware`), pin exact versions in `requirements.txt`.
-- To automate dependency bumps in downstream repos, enable Dependabot or Renovate for `requirements.txt`.
-
-Note: JupyterLab does not auto-upgrade Python packages by itself. Upgrades are applied when your environment runs `pip install -U ...` or recreates the environment from updated lock/requirements files.
-
-## CI Commands
-
-- PR pipeline entrypoint: `npm run -w @virtmat/vre-jupyterlab-extension ci`
-- Unit tests (TAP output): `npm run -w @virtmat/vre-jupyterlab-extension ci:test:unit`
-- Smoke integration tests (PR): `npm run -w @virtmat/vre-jupyterlab-extension ci:test:integration:smoke`
-- Full integration suite (nightly): `npm run -w @virtmat/vre-jupyterlab-extension ci:test:integration:full`
-- Build PR summary artifacts: `npm run -w @virtmat/vre-jupyterlab-extension ci:summary`
-
-CI summary artifacts are written to `packages/vre-jupyterlab-extension/tests/`:
-
-- `test-results.tap`
-- `ci-summary.json`
-- `ci-summary.md`
+BSD-3-Clause

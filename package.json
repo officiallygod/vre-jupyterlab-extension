@@ -1,87 +1,88 @@
 {
-	"name": "@virtmat/vre-jupyterlab-extension",
-	"version": "0.1.1",
-	"description": "VRE JupyterLab Extension with VRE DSL highlighting and notebook execution guard.",
-	"license": "BSD-3-Clause",
-	"type": "module",
-	"sideEffects": [
-		"style/*.css"
-	],
-	"main": "lib/index.js",
-	"types": "lib/index.d.ts",
-	"style": "style/index.css",
-	"files": [
-		"lib/**/*",
-		"labextension/**",
-		"schema/*.json",
-		"style/*.css",
-		"README.md",
-		"LICENSE"
-	],
-	"scripts": {
-		"build": "npm run clean && tsc -p tsconfig.json && ${PYTHON:-python3} -m jupyter labextension build .",
-		"build:dist": "npm run build && ${PYTHON:-python3} -m build",
-		"clean": "rm -rf lib labextension tsconfig.tsbuildinfo",
-		"test": "npm run test:unit",
-		"test:unit": "tsc -p tsconfig.json && node --test tests/freeze-state.test.mjs tests/config.test.mjs",
-		"test:integration:smoke": "tsc -p tsconfig.json && NODE_OPTIONS=--experimental-specifier-resolution=node node --test tests/integration-smoke.test.mjs",
-		"test:integration:full": "npm run test:integration:smoke",
-		"ci:build": "npm run build",
-		"ci:test:unit": "tsc -p tsconfig.json && bash -o pipefail -c \"node --test --test-reporter=tap tests/freeze-state.test.mjs tests/config.test.mjs | tee tests/test-results.tap\"",
-		"ci:test": "npm run ci:test:unit",
-		"ci:summary": "node tests/ci-summary.mjs",
-		"ci": "npm run ci:build && npm run ci:test"
-	},
-	"keywords": [
-		"jupyterlab-extension",
-		"codemirror6",
-		"dsl",
-		"vre",
-		"virtmat"
-	],
-	"repository": {
-		"type": "git",
-		"url": "https://gitlab.kit.edu/kit/virtmat-tools"
-	},
-	"homepage": "https://gitlab.kit.edu/kit/virtmat-tools",
-	"jupyterlab": {
-		"extension": "lib/index.js",
-		"outputDir": "labextension",
-		"schemaDir": "schema",
-		"discovery": {
-			"kernel": [
-				{
-					"kernel_spec": {
-						"language": "^vre-language$",
-						"display_name": "(?i).*vre.*"
-					},
-					"base": {
-						"name": "vre-language"
-					},
-					"managers": [
-						"pip"
-					]
-				}
-			]
-		}
-	},
-	"peerDependencies": {
-		"@jupyterlab/application": "^4.2.0"
-	},
-	"dependencies": {
-		"@codemirror/language": "^6.10.2",
-		"@codemirror/state": "^6.4.1",
-		"@jupyterlab/apputils": "^4.2.0",
-		"@jupyterlab/cells": "^4.2.0",
-		"@jupyterlab/codemirror": "^4.2.0",
-		"@jupyterlab/notebook": "^4.2.0",
-		"@jupyterlab/settingregistry": "^4.2.0",
-		"@lezer/highlight": "^1.2.1"
-	},
-	"devDependencies": {
-		"@jupyterlab/builder": "^4.2.0",
-		"@types/node": "^20.14.0",
-		"eslint": "^9.6.0",
-		"typescript": "^5.5.4"
-	}
+  "name": "@virtmat/vre-jupyterlab-extension",
+  "version": "0.1.3",
+  "description": "VRE JupyterLab Extension with VRE DSL highlighting and notebook execution guard.",
+  "license": "BSD-3-Clause",
+  "type": "module",
+  "sideEffects": [
+    "style/*.css"
+  ],
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "style": "style/index.css",
+  "files": [
+    "lib/**/*",
+    "labextension/**",
+    "schema/*.json",
+    "style/*.css",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "npm run clean && tsc -p tsconfig.json && ${PYTHON:-python3} -m jupyter labextension build .",
+    "build:dist": "npm run build && ${PYTHON:-python3} -m build",
+    "clean": "rm -rf lib labextension tsconfig.tsbuildinfo",
+    "test": "npm run test:unit",
+    "test:unit": "tsc -p tsconfig.json && node --test tests/freeze-state.test.mjs tests/config.test.mjs",
+    "test:integration:smoke": "tsc -p tsconfig.json && NODE_OPTIONS=--experimental-specifier-resolution=node node --test tests/integration-smoke.test.mjs",
+    "test:integration:full": "npm run test:integration:smoke",
+    "ci:build": "npm run build",
+    "ci:test:unit": "tsc -p tsconfig.json && bash -o pipefail -c \"node --test --test-reporter=tap tests/freeze-state.test.mjs tests/config.test.mjs | tee tests/test-results.tap\"",
+    "ci:test": "npm run ci:test:unit",
+    "ci:summary": "node tests/ci-summary.mjs",
+    "ci": "npm run ci:build && npm run ci:test",
+    "release": "python3 ./scripts/release.py"
+  },
+  "keywords": [
+    "jupyterlab-extension",
+    "codemirror6",
+    "dsl",
+    "vre",
+    "virtmat"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.kit.edu/kit/virtmat-tools"
+  },
+  "homepage": "https://gitlab.kit.edu/kit/virtmat-tools",
+  "jupyterlab": {
+    "extension": "lib/index.js",
+    "outputDir": "labextension",
+    "schemaDir": "schema",
+    "discovery": {
+      "kernel": [
+        {
+          "kernel_spec": {
+            "language": "^vre-language$",
+            "display_name": "(?i).*vre.*"
+          },
+          "base": {
+            "name": "vre-language"
+          },
+          "managers": [
+            "pip"
+          ]
+        }
+      ]
+    }
+  },
+  "peerDependencies": {
+    "@jupyterlab/application": "^4.2.0"
+  },
+  "dependencies": {
+    "@codemirror/language": "^6.10.2",
+    "@codemirror/state": "^6.4.1",
+    "@jupyterlab/apputils": "^4.2.0",
+    "@jupyterlab/cells": "^4.2.0",
+    "@jupyterlab/codemirror": "^4.2.0",
+    "@jupyterlab/notebook": "^4.2.0",
+    "@jupyterlab/settingregistry": "^4.2.0",
+    "@lezer/highlight": "^1.2.1"
+  },
+  "devDependencies": {
+    "@jupyterlab/builder": "^4.2.0",
+    "@types/node": "^20.14.0",
+    "eslint": "^9.6.0",
+    "typescript": "^5.5.4"
+  }
 }
