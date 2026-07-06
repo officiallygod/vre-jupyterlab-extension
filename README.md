@@ -60,14 +60,6 @@ pip install dist/vre_jupyterlab_extension-*.whl
 - **Execution Guard:** To preserve the integrity of your research, the extension includes a strict execution guard. It prevents VRE notebook cells from being edited after they have run and stops concurrent cell executions.
 - **MIME Type Synchronization:** The extension automatically detects VRE language kernels and ensures that cell inputs and outputs are coerced to the correct `text/x-vre` MIME type for seamless integration with the language server.
 
-## Documentation
-
-For a comprehensive technical breakdown of how the extension manages CodeMirror Lexers, the execution guard, and the build pipeline, please refer to our official documentation:
-
-[**View the Full Documentation**](https://virtmat-tools.github.io/vre-jupyterlab-extension/)
-
-If you would like to run the documentation server locally, you can do so by running `mkdocs serve` from the repository root after installing the requirements.
-
 ## Local Development
 
 If you are looking to contribute or build the project from source, you will need Node.js and a Python virtual environment.
@@ -107,8 +99,8 @@ npm run release
 
 ## Documentation & Resources
 
-- **[Full Documentation](https://virtmat-tools.github.io/vre-jupyterlab-extension/)**
 - **[PyPI Project Page](https://pypi.org/project/vre-jupyterlab-extension/)**
+- **[Full Documentation](https://virtmat-tools.github.io/vre-jupyterlab-extension/site/)**
 
 *Local documentation development:* run `mkdocs serve` from this directory after installing `requirements_docs.txt`.
 
