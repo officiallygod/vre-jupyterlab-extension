@@ -19,8 +19,6 @@
 
 ## 🚀 Quick Install
 
-No Node tooling required! The provided wheel embeds the prebuilt labextension assets so you can jump right into your environment.
-=======
 The VRE JupyterLab Extension is a prebuilt integration designed to support the Virtual Research Environment (VRE) directly within JupyterLab 4. It provides domain-specific syntax highlighting and an intelligent execution guard to ensure experimental provenance is maintained.
 
 ---
@@ -38,7 +36,7 @@ jupyter lab
 
 ## 🛠️ Developer / Build from Source
 
-To hack on the extension, install the local dependencies, compile the frontend, and pack the wheel:
+To add on the extension, install the local dependencies, compile the frontend, and pack the wheel:
 
 ```bash
 # 1. Setup the project
@@ -58,8 +56,8 @@ pip install dist/vre_jupyterlab_extension-*.whl
 
 ## 📦 Releases
 
-We provide a streamlined release script to handle versions, clean artifacts, and generate the final distribution files:
-=======
+We provide a streamlined release script to handle versions, clean artifacts, and generate the final distribution files
+
 ## Core Features
 
 - **Syntax Highlighting:** The extension uses CodeMirror 6 to provide accurate, semantic highlighting for the VRE DSL, including custom keywords and measurement units.
