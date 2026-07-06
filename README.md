@@ -30,14 +30,12 @@ The VRE JupyterLab Extension is a prebuilt integration designed to support the V
 Because the frontend assets are prebuilt and bundled directly into the Python wheel, you do not need Node.js or any frontend build tools to use this extension. 
 
 You can install it directly from PyPI:
->>>>>>> Stashed changes
 
 ```bash
 pip install vre-jupyterlab-extension
 jupyter lab
 ```
 
-<<<<<<< Updated upstream
 ## 🛠️ Developer / Build from Source
 
 To hack on the extension, install the local dependencies, compile the frontend, and pack the wheel:
@@ -106,7 +104,6 @@ jupyter labextension develop . --overwrite
 ## Release Process
 
 We use an automated Python script to manage versioning and clean up build artifacts. When you are ready to publish a new release, simply run:
->>>>>>> Stashed changes
 
 ```bash
 cd packages/vre-jupyterlab-extension
@@ -114,7 +111,6 @@ npm run release
 ```
 *Tip: Always use this tool rather than building manually for releases to ensure `package.json`, `setup.cfg`, and `__init__.py` versions stay perfectly synchronized.*
 
-<<<<<<< Updated upstream
 ## 📚 Documentation & Resources
 
 - 📖 **[Full Documentation](https://virtmat-tools.github.io/vre-jupyterlab-extension/)**
@@ -140,4 +136,3 @@ This will guide you through updating the semantic version across all configurati
 ## License
 
 This project is licensed under the BSD-3-Clause License. See the `LICENSE` file for more details.
->>>>>>> Stashed changes
