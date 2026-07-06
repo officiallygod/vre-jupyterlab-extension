@@ -13,7 +13,6 @@
 
 <br />
 
-<<<<<<< Updated upstream
 > A prebuilt **JupyterLab 4** extension that provides advanced **CodeMirror 6 highlighting** for the VRE DSL and a smart **execution guard** to protect your VRE kernels.
 
 ---
