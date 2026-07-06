@@ -17,7 +17,7 @@
 
 ---
 
-## 🚀 Quick Install
+## Quick Install
 
 The VRE JupyterLab Extension is a prebuilt integration designed to support the Virtual Research Environment (VRE) directly within JupyterLab 4. It provides domain-specific syntax highlighting and an intelligent execution guard to ensure experimental provenance is maintained.
 
@@ -34,7 +34,7 @@ pip install vre-jupyterlab-extension
 jupyter lab
 ```
 
-## 🛠️ Developer / Build from Source
+## Developer / Build from Source
 
 To add on the extension, install the local dependencies, compile the frontend, and pack the wheel:
 
@@ -53,10 +53,6 @@ python3 -m build --wheel --sdist
 # 4. Install your local wheel
 pip install dist/vre_jupyterlab_extension-*.whl
 ```
-
-## 📦 Releases
-
-We provide a streamlined release script to handle versions, clean artifacts, and generate the final distribution files
 
 ## Core Features
 
@@ -109,22 +105,12 @@ npm run release
 ```
 *Tip: Always use this tool rather than building manually for releases to ensure `package.json`, `setup.cfg`, and `__init__.py` versions stay perfectly synchronized.*
 
-## 📚 Documentation & Resources
+## Documentation & Resources
 
-- 📖 **[Full Documentation](https://virtmat-tools.github.io/vre-jupyterlab-extension/)**
-- 🐍 **[PyPI Project Page](https://pypi.org/project/vre-jupyterlab-extension/)**
+- **[Full Documentation](https://virtmat-tools.github.io/vre-jupyterlab-extension/)**
+- **[PyPI Project Page](https://pypi.org/project/vre-jupyterlab-extension/)**
 
 *Local documentation development:* run `mkdocs serve` from this directory after installing `requirements_docs.txt`.
-
-## ⚙️ Requirements
-
-- `jupyterlab>=4.2,<5`
-
-## 📝 License
-
-Distributed under the **BSD-3-Clause** License. See `LICENSE` for more information.
-=======
-This will guide you through updating the semantic version across all configuration files and will prepare a pristine build for PyPI.
 
 ## Requirements
 
